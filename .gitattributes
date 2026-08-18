@@ -1,0 +1,15 @@
+# Normalise to LF in the repository, and let Git decide the working-copy ending by default.
+* text=auto
+
+# These are read by Linux containers. A CRLF here is not cosmetic: `#!/usr/bin/env bash\r` fails
+# with "no such file or directory", and this repository is developed on Windows.
+*.sh text eol=lf
+Dockerfile* text eol=lf
+Caddyfile* text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+.dockerignore text eol=lf
+
+# Binary assets Git must never touch.
+*.png binary
+*.ico binary

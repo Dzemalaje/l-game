@@ -1,0 +1,17 @@
+# Everything the image builds for itself, or must never be baked into a layer.
+.git
+.github
+.gitignore
+node_modules
+**/node_modules
+dist
+.expo
+android
+ios
+tools/screenshots
+*.log
+
+# Secrets. Only the examples are safe to copy into a build context.
+.env
+.env.*
+!.env.example

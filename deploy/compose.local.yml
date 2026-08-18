@@ -1,0 +1,20 @@
+# Run the production stack on your own machine before pushing a change to it.
+#
+#   docker network create dokploy-network        # once; Dokploy's Traefik network stands in
+#   docker compose -f docker-compose.yml -f deploy/compose.local.yml up --build
+#
+# Traefik is not here, so the two public services publish ports directly instead:
+#   http://127.0.0.1:8080  the game
+#   http://127.0.0.1:3001  the SpacetimeDB gateway, with the same allowlist as production
+#
+# 3001 rather than 3000 so this can run beside a local `npm run stdb:start`.
+services:
+  web:
+    ports:
+      - "127.0.0.1:8080:8080"
+    labels: !reset []
+
+  stdb-gateway:
+    ports:
+      - "127.0.0.1:3001:8080"
+    labels: !reset []

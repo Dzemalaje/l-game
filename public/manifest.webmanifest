@@ -1,0 +1,22 @@
+{
+  "name": "The L Game",
+  "short_name": "L Game",
+  "description": "Edward de Bono's L Game as a fast, touch-first match against the CPU, a friend on the same device, or a player on your network.",
+  "id": "the-l-game",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#f4f1e8",
+  "theme_color": "#f4f1e8",
+  "categories": ["games", "board", "puzzle"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

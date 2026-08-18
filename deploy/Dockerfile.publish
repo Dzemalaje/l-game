@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1
+#
+# Publishes the game module into the SpacetimeDB container. This runs once per deploy, from inside
+# the compose network, which is the only place allowed to publish: the public gateway refuses the
+# publish routes outright.
+#
+# The module is TypeScript, so this needs Node to bundle it and the `spacetime` CLI to upload it.
+# Taking the CLI binary out of the official image keeps it byte-identical to the running server
+# instead of whatever the install script serves that day.
+ARG SPACETIME_VERSION=v2.8.1
+FROM clockworklabs/spacetime:${SPACETIME_VERSION} AS cli
+
+FROM node:22-bookworm-slim
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+COPY --from=cli /opt/spacetime/spacetimedb-cli /usr/local/bin/spacetime
+
+WORKDIR /app
+COPY spacetimedb/spacetimedb/package.json spacetimedb/spacetimedb/package-lock.json ./spacetimedb/spacetimedb/
+RUN npm ci --prefix spacetimedb/spacetimedb
+
+COPY spacetimedb ./spacetimedb
+COPY deploy/publish.sh /usr/local/bin/publish.sh
+RUN chmod +x /usr/local/bin/publish.sh
+
+ENTRYPOINT ["/usr/local/bin/publish.sh"]

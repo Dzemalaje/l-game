@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+#
+# The stock image runs as the unprivileged `spacetime` user but ships no data directory. Docker
+# creates a missing bind target root-owned, so mounting a fresh named volume straight onto /stdb
+# makes the server die at boot with "Permission denied (os error 13)".
+#
+# Creating the directory *in the image* with the right owner is what fixes it: Docker seeds a new
+# named volume from the image path, ownership included.
+ARG SPACETIME_VERSION=v2.8.1
+FROM clockworklabs/spacetime:${SPACETIME_VERSION}
+
+USER root
+RUN mkdir -p /stdb && chown spacetime:spacetime /stdb
+USER spacetime
+
+VOLUME /stdb
+EXPOSE 3000
+ENTRYPOINT ["spacetime"]
+CMD ["start", "--listen-addr", "0.0.0.0:3000", "--data-dir", "/stdb"]

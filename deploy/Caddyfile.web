@@ -1,0 +1,40 @@
+# Static host for the Expo web export. Dokploy's Traefik terminates TLS in front of this, so the
+# site is served over plain HTTP on an unprivileged port inside the container network.
+:8080 {
+	root * /srv
+	encode zstd gzip
+
+	# Expo writes a content hash into every bundle and asset filename, so those can be cached
+	# forever. The HTML entry points are rewritten on every deploy and must never be.
+	@hashed path /_expo/static/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	@html path *.html /
+	header @html Cache-Control "no-cache"
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	# Static rendering emits one .html per route. Unknown paths get the router's own not-found page,
+	# but with a real 404 status - serving it as 200 would tell crawlers the page exists.
+	try_files {path} {path}.html {path}/index.html
+	file_server
+
+	handle_errors {
+		@missing expression {err.status_code} == 404
+		handle @missing {
+			rewrite * /+not-found.html
+			file_server {
+				status 404
+			}
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

@@ -1,0 +1,31 @@
+# Public edge for SpacetimeDB.
+#
+# A SpacetimeDB server is completely open by default: anything that can reach it can publish a
+# module over yours, run arbitrary SQL, or delete the database. The upstream self-hosting guide
+# solves this with an nginx allowlist; this is the same allowlist, as a container that travels with
+# the repository.
+#
+# Only the two routes a player's browser needs are forwarded. `spacetime publish` is *not* one of
+# them - deploys publish from inside the compose network, where they reach SpacetimeDB directly.
+:8080 {
+	# /v1/ping is a liveness probe that returns nothing and changes nothing, so it is safe to expose
+	# and lets an uptime monitor (or the online smoke test) reach a deployed server.
+	@client path_regexp ^/v1/(ping|identity(/.*)?|database/[^/]+/subscribe)$
+
+	handle @client {
+		# reverse_proxy upgrades websockets on its own; the subscribe route is one.
+		reverse_proxy spacetimedb:3000 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	handle {
+		header Content-Type "text/plain"
+		respond "Not found" 404
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

@@ -1,0 +1,27 @@
+:root {
+  color-scheme: light;
+  --lgame-paper: #f4f0e6;
+  --lgame-ink: #252b29;
+  --lgame-sage: #879c88;
+  --lgame-sage-dark: #556b59;
+  --lgame-red: #c4473f;
+  --lgame-blue: #386c8f;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--lgame-paper);
+}
+
+body {
+  margin: 0;
+  color: var(--lgame-ink);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}

@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Types, lint, tests, web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # typecheck + lint + rules tests + module tests + web build + the offline browser smoke.
+      # The browser smoke skips itself when no Chrome is present, so it never fails the job falsely.
+      - run: npm run check
+        env:
+          EXPO_PUBLIC_SPACETIMEDB_URL: ws://127.0.0.1:3000
+
+  images:
+    name: Deployment images build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      # The compose file joins Dokploy's Traefik network, which only exists on the server.
+      - name: Stand in for Dokploy's network
+        run: docker network create dokploy-network || true
+
+      # Catches a broken Dockerfile or compose file here rather than halfway through a deploy.
+      - name: Build every image in the stack
+        run: docker compose build
+        env:
+          APP_DOMAIN: ci.invalid
+          STDB_DOMAIN: stdb.ci.invalid
+          EXPO_PUBLIC_LEGAL_OPERATOR: CI
+          EXPO_PUBLIC_LEGAL_CONTACT: ci@ci.invalid

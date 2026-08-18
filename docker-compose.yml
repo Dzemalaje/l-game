@@ -1,0 +1,107 @@
+# Production stack for Dokploy.
+#
+#   internet -> Dokploy Traefik (TLS) -> web          static Expo export
+#                                     -> stdb-gateway allowlist -> spacetimedb
+#
+# SpacetimeDB itself is on a private network with no route in from outside. That is not decoration:
+# a SpacetimeDB server accepts a publish from anyone who can reach it, so exposing it directly would
+# let a stranger replace the game module or drop the database. Deploys publish from stdb-publish,
+# which sits on that private network.
+#
+# Set APP_DOMAIN, STDB_DOMAIN and the legal contact values in Dokploy -> Environment. Dokploy writes
+# them to a .env beside this file, which is where ${...} below reads them from.
+
+services:
+  spacetimedb:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.spacetimedb
+      args:
+        SPACETIME_VERSION: ${SPACETIME_VERSION:-v2.8.1}
+    restart: unless-stopped
+    volumes:
+      - stdb-data:/stdb
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/v1/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  # One-shot. Builds the TypeScript module and uploads it, then exits; Dokploy shows a failed deploy
+  # if it exits non-zero, which is what you want when a migration would break the schema.
+  stdb-publish:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.publish
+      args:
+        SPACETIME_VERSION: ${SPACETIME_VERSION:-v2.8.1}
+    restart: "no"
+    depends_on:
+      spacetimedb:
+        condition: service_healthy
+    environment:
+      SPACETIMEDB_SERVER: http://spacetimedb:3000
+      SPACETIMEDB_NAME: ${SPACETIMEDB_NAME:-l-game}
+      # Optional but strongly recommended - see deploy/publish.sh. Without it the only copy of the
+      # database owner identity is the stdb-cli volume.
+      SPACETIMEDB_TOKEN: ${SPACETIMEDB_TOKEN:-}
+    volumes:
+      - stdb-cli:/root/.config/spacetime
+    networks:
+      - internal
+
+  # The only part of SpacetimeDB the public can reach: the identity endpoint and the websocket.
+  stdb-gateway:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      spacetimedb:
+        condition: service_healthy
+    volumes:
+      - ./deploy/Caddyfile.stdb:/etc/caddy/Caddyfile:ro
+    networks:
+      - internal
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.lgame-stdb.rule=Host(`${STDB_DOMAIN}`)
+      - traefik.http.routers.lgame-stdb.entrypoints=websecure
+      - traefik.http.routers.lgame-stdb.tls.certresolver=letsencrypt
+      - traefik.http.services.lgame-stdb.loadbalancer.server.port=8080
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+      args:
+        # Compiled into the bundle, not read at runtime. Changing a domain means a rebuild.
+        EXPO_PUBLIC_SPACETIMEDB_URL: wss://${STDB_DOMAIN}
+        EXPO_PUBLIC_SPACETIMEDB_NAME: ${SPACETIMEDB_NAME:-l-game}
+        EXPO_PUBLIC_LEGAL_OPERATOR: ${EXPO_PUBLIC_LEGAL_OPERATOR:-}
+        EXPO_PUBLIC_LEGAL_CONTACT: ${EXPO_PUBLIC_LEGAL_CONTACT:-}
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.lgame-web.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.lgame-web.entrypoints=websecure
+      - traefik.http.routers.lgame-web.tls.certresolver=letsencrypt
+      - traefik.http.services.lgame-web.loadbalancer.server.port=8080
+
+networks:
+  internal:
+    driver: bridge
+  dokploy-network:
+    external: true
+
+volumes:
+  # Player accounts, ratings, matches and friendships. The only stateful thing in the stack.
+  stdb-data:
+  # The publishing identity. Recoverable from SPACETIMEDB_TOKEN if set; irreplaceable if not.
+  stdb-cli:
