@@ -19,7 +19,7 @@ appropriate and must not infringe another person's rights.
 
 ## 3. Rankings and game results
 
-The authoritative Nakama server decides legal moves, clocks, results, and ratings. Rankings are
+The authoritative SpacetimeDB module decides legal moves, clocks, results, and ratings. Rankings are
 recreational, may change when errors or abuse are corrected, and do not represent money, property,
 or a prize.
 

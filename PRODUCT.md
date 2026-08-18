@@ -10,7 +10,8 @@ adaptive
 
 Expo SDK 57 with Expo Router for web, iOS, and Android. HeroUI Native supplies mobile interface
 components; HeroUI React supplies web interface components because HeroUI Native does not recommend
-its current release for web. Shared TypeScript owns game rules, client state, and Nakama networking.
+its current release for web. Shared TypeScript owns game rules, client state, and SpacetimeDB
+networking.
 
 ## Users
 
@@ -26,7 +27,8 @@ results are trustworthy, and every connection or match state is visible.
 
 ## Positioning
 
-One compact client supports offline CPU and Pass & Play while Nakama owns online legality, clocks,
+One compact client supports offline CPU and Pass & Play while the SpacetimeDB module owns online
+legality, clocks,
 reconnection, ratings, friends, presence, and leaderboards. Clients can preview intent but cannot
 forge an online result or rank.
 
@@ -40,12 +42,14 @@ text sizing, reduced motion, and keyboard/pointer input on web are part of norma
 
 - Preserve CPU, Pass & Play, casual and ranked matchmaking, authoritative clocks, waiting,
   queueing, reconnecting, disconnected, and game-over states.
-- Preserve email/device authentication, name editing, DiceBear avatar selection, friends, online
+- Preserve device-held identity accounts, name editing, DiceBear avatar selection, friends, online
   count, personal rank, global/friends leaderboards, rules guide, legal pages, and credits.
-- Nakama remains the only application backend; CockroachDB is Nakama's private internal store.
+- SpacetimeDB remains the only application backend: it is the database and the game server at once,
+  so there is no separate application database.
 - There is one all-time ranked leaderboard. Weekly rankings remain intentionally absent.
 - The board must work with touch, pointer, and keyboard input without KAPLAY.
-- Web remains deployable to the existing Caddy/Nakama VPS stack; iOS and Android use Expo builds.
+- Web remains deployable to a Caddy/SpacetimeDB VPS stack through Dokploy; iOS and Android use Expo
+  builds.
 
 ## Brand Commitments
 
@@ -56,7 +60,8 @@ controls into HeroUI and native platform conventions.
 ## Evidence on Hand
 
 The existing client contains working product copy, complete flows, legal text, icons, DiceBear
-integration, screenshots, shared rules, authoritative Nakama protocol, and automated tests. There are
+integration, screenshots, shared rules, an authoritative SpacetimeDB module, and automated tests.
+There are
 no testimonials, commercial claims, or supplied marketing images to invent.
 
 ## Product Principles

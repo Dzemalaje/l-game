@@ -16,9 +16,9 @@ credits are retained in appreciation of the artists.
 
 | Component | Version | License | Project |
 | --- | ---: | --- | --- |
-| Nakama server | 3.40.0 | Apache-2.0 | <https://github.com/heroiclabs/nakama> |
-| `nakama-runtime` | 1.47.0 | Apache-2.0 | <https://github.com/heroiclabs/nakama-common> |
-| `@heroiclabs/nakama-js` | 2.8.0 | Apache-2.0 | <https://github.com/heroiclabs/nakama-js> |
+| SpacetimeDB server | 2.8.1 | BSL 1.1 | <https://github.com/clockworklabs/SpacetimeDB> |
+| `spacetimedb` (module + client SDK) | 2.8.x | ISC | <https://www.npmjs.com/package/spacetimedb> |
+| Caddy (web host and gateway) | 2.10.x | Apache-2.0 | <https://github.com/caddyserver/caddy> |
 | Expo / Expo Router | 57.0.x | MIT | <https://github.com/expo/expo> |
 | React / React DOM | 19.2.3 | MIT | <https://github.com/facebook/react> |
 | React Native | 0.86.2 | MIT | <https://github.com/facebook/react-native> |
@@ -27,6 +27,17 @@ credits are retained in appreciation of the artists.
 | Uniwind | 1.10.x | MIT | <https://github.com/withuniwind/uniwind> |
 | Tailwind CSS | 4.3.x | MIT | <https://github.com/tailwindlabs/tailwindcss> |
 | React Native SVG | 15.15.4 | MIT | <https://github.com/software-mansion/react-native-svg> |
+
+## SpacetimeDB licensing
+
+The SpacetimeDB server is not open source. It is under the Business Source License 1.1, whose
+Additional Use Grant permits production use provided the application "uses the Licensed Work with no
+more than one SpacetimeDB instance in production" and is not itself a Database Service. The
+deployment in `docker-compose.yml` runs exactly one instance and stays inside that grant; running a
+second production instance, or offering the database to third parties, would not. Re-read the
+current licence before scaling out: <https://github.com/clockworklabs/SpacetimeDB/blob/master/LICENSE.txt>.
+
+## Notices
 
 Transitive package license files are shipped in installed npm packages and linked upstream source.
 Production source/distributions must retain notices required by Apache-2.0, MIT, BSD, and other

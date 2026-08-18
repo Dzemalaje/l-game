@@ -7,16 +7,19 @@ by this deployment of The L Game. Contact: **[LEGAL CONTACT — configure `EXPO_
 
 ## What we process
 
-- **Account data:** email address, password hash managed by Nakama, username, Nakama user ID,
-  session information, and an optional DiceBear avatar style and opaque seed.
+- **Account data:** a SpacetimeDB identity, a username you choose, connection records, and an
+  optional DiceBear avatar style and opaque seed. There is no email address and no password: an
+  account is a cryptographic identity held by your device, so we never receive or store either.
 - **Game data:** moves, clocks, match results, Glicko-2 rating, wins/losses, leaderboard rank, and
   reconnect state.
 - **Social data:** friend relationships, requests, blocks, notifications, and temporary online or
   presence status.
 - **Technical data:** server request and security logs may contain timestamps, IP addresses, user
   agents, errors, and identifiers needed to operate and protect the service.
-- **On your device:** session and refresh tokens, a random guest device ID, appearance settings, and
-  the configured server URL are stored in Expo SecureStore on iOS/Android or localStorage on web.
+- **On your device:** the identity token that is your account, the configured server address, and
+  your chosen board and piece appearance, stored in Expo SecureStore on iOS/Android or localStorage
+  on web. Losing that token means losing access to the account, because nothing else identifies
+  you to us.
 
 ## Why we use it
 
@@ -27,19 +30,21 @@ legal obligations, and consent where specifically required.
 
 ## Sharing and external services
 
-Nakama and its internal CockroachDB store are self-hosted infrastructure for this deployment; game
-code does not send account data to a separate analytics or advertising service.
+SpacetimeDB is self-hosted infrastructure for this deployment and is both the database and the game
+server; there is no separate application database. Game code does not send account data to any
+analytics or advertising service.
 
 When an avatar is displayed, the app requests an SVG from `api.dicebear.com`. DiceBear receives
 ordinary web-request data such as IP address and user agent plus an opaque random seed and style. The
-avatar URL does not contain the player's email, username, or Nakama user ID. DiceBear's own legal
+avatar URL does not contain the player's username or identity. DiceBear's own legal
 and privacy notices govern that request: <https://www.dicebear.com/>.
 
 ## Visibility
 
-Your username, avatar, rating, record, rank, online indicator, and friendship state may be visible
-to other players as needed for gameplay and social features. Email addresses, password hashes,
-session tokens, blocks, and server-only match records are not public.
+Your username, avatar, rating, record, rank, online indicator, friendship state, and the names
+recorded on finished matches are readable by other connected players, as gameplay and the
+leaderboard require. Your identity token is never shared and never leaves your device except to
+authenticate your own connection.
 
 ## Retention and deletion
 
