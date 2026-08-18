@@ -5,11 +5,18 @@ import type { NetFriend, NetProfile } from "./net";
 export interface BoardFrame {
   pieces: [Cell[], Cell[]];
   neutrals: [Cell, Cell];
-  ghost?: { cells: Cell[]; player: Player };
+  /**
+   * Where the moving player's L was, drawn as translucent dots. `lifted` means the piece has not
+   * been placed yet, so these cells are the piece rather than a trail behind it and no solid
+   * squares should be drawn on them.
+   */
+  ghost?: { cells: Cell[]; player: Player; lifted: boolean };
   drawn: Cell[];
   targets: Cell[];
   selectedNeutral: -1 | 0 | 1;
   pendingDestination?: Cell;
+  /** The L is placed and it is this player's move, so the discs can be picked up. */
+  discsMovable: boolean;
   watching: boolean;
   pieceSkin: number;
   boardSkin: number;

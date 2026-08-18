@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import type { GestureResponderEvent, LayoutChangeEvent } from "react-native";
 import Svg, { Circle, Rect } from "react-native-svg";
@@ -46,9 +46,14 @@ export function GameBoard({ frame, enabled, phase, onCellPress, onDrawTo, onPick
   const { ref: boardRef, reject: rejectMotion } = useBoardMotion({
     targets: key(frame.targets),
     drawn: key(frame.drawn),
-    pieces: `${key(frame.pieces[0])}|${key(frame.pieces[1])}`,
+    // Identifies each occupied square, so only squares that actually changed are animated.
+    pieces: frame.pieces
+      .flatMap((cells, player) => cells.map(([x, y]) => `${player}-${x}-${y}`))
+      .sort()
+      .join(","),
     discs: `${key(frame.neutrals)}|${frame.pendingDestination?.join("") ?? ""}`,
     held: frame.selectedNeutral >= 0,
+    discsMovable: frame.discsMovable,
     reduced,
   });
 
@@ -184,18 +189,19 @@ export function GameBoard({ frame, enabled, phase, onCellPress, onDrawTo, onPick
           ))}
 
           {frame.ghost?.cells.map(([x, y]) => (
-            <Rect
+            <Circle
               key={`ghost-${x}-${y}`}
-              x={x * CELL_UNITS + 17}
-              y={y * CELL_UNITS + 17}
-              width={66}
-              height={66}
-              rx={16}
-              fill={css(pieces.colors[frame.ghost!.player])}
-              opacity={0.2}
+              data-lg="ghost"
+              cx={x * CELL_UNITS + 50}
+              cy={y * CELL_UNITS + 50}
+              r={30}
+              // An outline rather than a filled dot: these squares are usually legal targets too,
+              // and two filled circles in one square blended into a muddy third colour that read
+              // as neither.
+              fill="none"
               stroke={css(pieces.colors[frame.ghost!.player])}
-              strokeDasharray="8 7"
-              strokeWidth={3}
+              strokeWidth={5}
+              opacity={0.45}
             />
           ))}
 
@@ -211,20 +217,23 @@ export function GameBoard({ frame, enabled, phase, onCellPress, onDrawTo, onPick
             />
           ))}
 
-          {frame.pieces.flatMap((cells, player) => cells.map(([x, y]) => (
-            <Rect
-              key={`piece-${player}-${x}-${y}`}
-              data-lg="piece"
-              x={x * CELL_UNITS + INSET}
-              y={y * CELL_UNITS + INSET}
-              width={CELL_UNITS - INSET * 2}
-              height={CELL_UNITS - INSET * 2}
-              rx={19}
-              fill={css(pieces.colors[player as 0 | 1])}
-              stroke="#fff9"
-              strokeWidth={3}
-            />
-          )))}
+          {frame.pieces.flatMap((cells, player) => cells
+            .filter((cell) => !(frame.ghost?.lifted && player === frame.ghost.player && hasCell(frame.ghost.cells, cell)))
+            .map(([x, y]) => (
+              <Rect
+                key={`piece-${player}-${x}-${y}`}
+                data-lg="piece"
+                data-cell={`${player}-${x}-${y}`}
+                x={x * CELL_UNITS + INSET}
+                y={y * CELL_UNITS + INSET}
+                width={CELL_UNITS - INSET * 2}
+                height={CELL_UNITS - INSET * 2}
+                rx={19}
+                fill={css(pieces.colors[player as 0 | 1])}
+                stroke="#fff9"
+                strokeWidth={3}
+              />
+            )))}
 
           {frame.drawn.map(([x, y], index) => (
             <Rect
@@ -246,18 +255,35 @@ export function GameBoard({ frame, enabled, phase, onCellPress, onDrawTo, onPick
             const selected = frame.selectedNeutral === index;
             const moved = selected && frame.pendingDestination;
             const at = moved ? frame.pendingDestination! : [x, y] as Cell;
+            const mover = css(pieces.colors[frame.ghost?.player ?? 0]);
             return (
-              <Circle
-                key={`neutral-${index}`}
-                data-lg="disc"
-                data-held={selected ? "true" : "false"}
-                cx={at[0] * CELL_UNITS + 50}
-                cy={at[1] * CELL_UNITS + 50}
-                r={selected ? 28 : 24}
-                fill="#f8f5ec"
-                stroke={selected ? css(pieces.colors[frame.ghost?.player ?? 0]) : css(board.outline)}
-                strokeWidth={selected ? 8 : 5}
-              />
+              <React.Fragment key={`neutral-${index}`}>
+                {/* Nothing on the board used to say when the discs became live, so the second half
+                    of a turn was easy to miss entirely. This halo appears exactly then. */}
+                {frame.discsMovable && !selected ? (
+                  <Circle
+                    data-lg="disc-ready"
+                    cx={at[0] * CELL_UNITS + 50}
+                    cy={at[1] * CELL_UNITS + 50}
+                    r={33}
+                    fill="none"
+                    stroke={mover}
+                    strokeWidth={3}
+                    strokeDasharray="7 6"
+                    opacity={0.75}
+                  />
+                ) : null}
+                <Circle
+                  data-lg="disc"
+                  data-held={selected ? "true" : "false"}
+                  cx={at[0] * CELL_UNITS + 50}
+                  cy={at[1] * CELL_UNITS + 50}
+                  r={selected ? 28 : 24}
+                  fill="#f8f5ec"
+                  stroke={selected ? mover : css(board.outline)}
+                  strokeWidth={selected ? 8 : 5}
+                />
+              </React.Fragment>
             );
           })}
         </Svg>

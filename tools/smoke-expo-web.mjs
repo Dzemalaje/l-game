@@ -263,6 +263,12 @@ try {
   }
 
   if (!await drawL(0)) throw new Error("Could not complete an L on the first turn");
+  await wait(200);
+  const discPhase = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  writeFileSync(join(SHOTS, "expo-match-discs.png"), Buffer.from(discPhase.data, "base64"));
+  // The halo is the only thing that says the discs have gone live, so its absence is a regression.
+  const halo = await cdp.eval(`document.querySelectorAll('[data-lg="disc-ready"]').length`);
+  if (halo !== 2) throw new Error(`Expected both discs to show a movable halo, saw ${halo}`);
   // Motion writes inline styles as it animates; their presence is what proves it ran.
   const animated = await cdp.eval(`(() => [...document.querySelectorAll('[data-lg]')]
     .some((node) => /transform|opacity|scale/.test(node.getAttribute('style') ?? '')))()`);

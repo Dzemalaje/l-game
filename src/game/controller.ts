@@ -65,6 +65,15 @@ export class GameController {
   private inMatch = false;
   private mode: Mode = "cpu";
   private phase: Phase = "l";
+  /**
+   * Lobby and account text - offline notices, queue state, "signed out".
+   *
+   * Split from `message`, which is the in-match prompt. They shared one field, and because the
+   * status line prefers `message` whenever you can act, a failed background connection would
+   * replace "Drag through four highlighted squares" with a note about the server for the rest of
+   * the match. Two audiences, two fields.
+   */
+  private notice = "";
   private state = initialState();
   private pendingL?: Cell[];
   private ghost?: Cell[];
@@ -215,7 +224,7 @@ export class GameController {
       }
       return true;
     } catch (error) {
-      this.message = `Offline: ${reason(error, "could not reach the game server")}. CPU and Pass & Play still work.`;
+      this.notice = `Offline: ${reason(error, "could not reach the game server")}. CPU and Pass & Play still work.`;
       return false;
     } finally {
       this.connecting = false;
@@ -262,7 +271,7 @@ export class GameController {
           this.setConnectionState("idle");
           this.inMatch = false;
           this.mode = "cpu";
-          this.message = "Search cancelled.";
+          this.notice = "Search cancelled.";
         }
       }
       this.emit();
@@ -277,6 +286,7 @@ export class GameController {
       this.resetMatch();
       this.inMatch = true;
       this.message = "";
+      this.notice = "";
     }
 
     this.localPlayer = match.seat;
@@ -328,7 +338,7 @@ export class GameController {
     try {
       next = normalizeServerUrl(value);
     } catch (error) {
-      this.message = reason(error, "That server address is not valid.");
+      this.notice = reason(error, "That server address is not valid.");
       this.emit();
       return;
     }
@@ -336,7 +346,7 @@ export class GameController {
     this.serverUrl = next;
     void storage.set(STORAGE.server, next);
     this.net.disconnect();
-    this.message = "Reconnecting…";
+    this.notice = "Reconnecting…";
     this.emit();
     void this.connectNet();
   }
@@ -356,7 +366,7 @@ export class GameController {
       if (!(await this.requireNet())) throw new Error("The game server is unreachable.");
       await this.net.setUsername(wanted);
       this.namePanel = false;
-      this.message = `You are playing as ${wanted}.`;
+      this.notice = `You are playing as ${wanted}.`;
     } catch (error) {
       this.authMessage = reason(error, "Could not change that name.");
     } finally {
@@ -381,7 +391,7 @@ export class GameController {
     this.rankCount = undefined;
     this.namePanel = false;
     this.deleteAccountArmed = false;
-    this.message = "Signed out. You are now a new guest on this device.";
+    this.notice = "Signed out. You are now a new guest on this device.";
     this.emit();
     await this.connectNet();
   }
@@ -403,7 +413,7 @@ export class GameController {
       this.deleteAccountArmed = false;
       // The identity itself is still valid, so reconnecting hands back a fresh guest profile.
       await this.logout();
-      this.message = "Your account was deleted.";
+      this.notice = "Your account was deleted.";
     } catch (error) {
       this.authMessage = reason(error, "Could not delete that account.");
     } finally {
@@ -514,6 +524,7 @@ export class GameController {
     this.endReason = "moves";
     this.optimisticTurn = 0;
     this.message = "";
+    this.notice = "";
     this.pendingServerError = "";
     this.competitors = [undefined, undefined];
     this.seatConnected = [false, false];
@@ -587,13 +598,13 @@ export class GameController {
    */
   async joinOnline(ranked = false) {
     if (!(await this.requireNet())) {
-      this.message = "The game server is unreachable. CPU and Pass & Play still work.";
+      this.notice = "The game server is unreachable. CPU and Pass & Play still work.";
       this.emit();
       return;
     }
 
     if (ranked && this.account?.guest) {
-      this.message = "Choose a username before playing ranked matches.";
+      this.notice = "Choose a username before playing ranked matches.";
       this.showNameEditor(true);
       return;
     }
@@ -612,7 +623,7 @@ export class GameController {
         ? `Searching within 100 points of ${this.account?.rating ?? 1500}.`
         : "Searching for a casual opponent.",
     );
-    this.message = ranked ? "Entering ranked queue…" : "Entering casual queue…";
+    this.notice = ranked ? "Entering ranked queue…" : "Entering casual queue…";
     this.emit();
 
     try {
@@ -622,7 +633,7 @@ export class GameController {
       this.mode = "cpu";
       this.inMatch = false;
       this.setConnectionState("idle");
-      this.message = reason(error, "Could not join the queue.");
+      this.notice = reason(error, "Could not join the queue.");
       this.emit();
     }
   }
@@ -1123,14 +1134,24 @@ export class GameController {
     else if (this.cpuThinking) pieces[1] = [];
     const mover = this.state.turn;
     const showGhost = Boolean(this.ghost) || Boolean(pendingL) || (this.phase === "l" && (this.canAct() || this.cpuThinking));
+    // Until the new L is placed the piece is effectively in the player's hand, so the board marks
+    // where it came from instead of drawing it as though it were still sitting there. Once it is
+    // placed, only the squares it has actually vacated stay marked - a square the new L reuses is
+    // part of the piece again, not a leftover.
+    const lifted = !pendingL;
+    const previous = this.ghost ?? this.state.pieces[mover];
+    const ghostCells = lifted
+      ? previous
+      : previous.filter((cell) => !pieces[mover].some((held) => sameCell(held, cell)));
     return {
       pieces,
       neutrals: preview.neutrals,
-      ghost: showGhost ? { cells: this.ghost ?? this.state.pieces[mover], player: mover } : undefined,
+      ghost: showGhost && ghostCells.length ? { cells: ghostCells, player: mover, lifted } : undefined,
       drawn,
       targets: this.targets(),
       selectedNeutral: selected,
       pendingDestination: destination,
+      discsMovable: this.phase === "neutral" && this.canAct(),
       watching,
       pieceSkin: this.pieceSkinIndex,
       boardSkin: this.boardSkinIndex,
@@ -1182,7 +1203,7 @@ export class GameController {
       board: this.boardFrame(),
       seats: [this.seatView(left), this.seatView(right)],
       status: this.statusText(),
-      message: this.message,
+      message: this.notice,
       ranked: this.ranked,
       onlineReady: this.onlineReady,
       connection: this.connectionView(),

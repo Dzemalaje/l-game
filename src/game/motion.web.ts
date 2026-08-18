@@ -10,7 +10,8 @@
  */
 import { useEffect, useRef } from "react";
 import { useAnimate, useReducedMotion as useMotionReducedMotion, stagger } from "motion/react";
-import type { MotionHandle, MotionKind } from "./motionTypes";
+import { addedCells } from "./motionTypes";
+import type { BoardMotionSignature, MotionHandle, MotionKind } from "./motionTypes";
 
 /** Honours the operating system's "reduce motion" setting. */
 export function useReducedMotion() {
@@ -22,20 +23,13 @@ const selector = (kind: MotionKind) => `[data-lg="${kind}"]`;
 
 const SPRING = { type: "spring", stiffness: 520, damping: 32, mass: 0.7 } as const;
 
-export function useBoardMotion(signature: {
-  targets: string;
-  drawn: string;
-  pieces: string;
-  discs: string;
-  held: boolean;
-  reduced: boolean;
-}): MotionHandle {
+export function useBoardMotion(signature: BoardMotionSignature): MotionHandle {
   const [scope, animate] = useAnimate();
   // First paint should not animate: the board would otherwise pop on every mount, including the
   // one that happens the moment a match opens.
   const seen = useRef({ targets: "", drawn: "", pieces: "", discs: "" });
 
-  const { targets, drawn, pieces, discs, held, reduced } = signature;
+  const { targets, drawn, pieces, discs, held, discsMovable, reduced } = signature;
 
   useEffect(() => {
     if (reduced || !scope.current) return;
@@ -61,11 +55,14 @@ export function useBoardMotion(signature: {
 
   useEffect(() => {
     if (reduced || !scope.current) return;
-    const first = seen.current.pieces === "";
-    const changed = seen.current.pieces !== pieces;
+    const before = seen.current.pieces;
     seen.current.pieces = pieces;
-    if (first || !changed) return;
-    const nodes = scope.current.querySelectorAll(selector("piece"));
+    // Animate the squares that actually changed, not every square on the board.
+    const added = addedCells(before, pieces);
+    if (!added.length) return;
+    const nodes = added
+      .map((cell) => scope.current?.querySelector(`${selector("piece")}[data-cell="${cell}"]`))
+      .filter(Boolean) as Element[];
     if (!nodes.length) return;
     animate(nodes, { scale: [0.82, 1] }, { ...SPRING, delay: stagger(0.02) });
   }, [animate, pieces, reduced, scope]);
@@ -78,8 +75,6 @@ export function useBoardMotion(signature: {
     if (first || !changed) return;
     const nodes = scope.current.querySelectorAll(selector("disc"));
     if (!nodes.length) return;
-    // cx/cy are SVG presentation attributes; Motion animates them directly, so a disc glides to its
-    // new square instead of teleporting.
     animate(nodes, { scale: [0.88, 1] }, { ...SPRING });
   }, [animate, discs, reduced, scope]);
 
@@ -89,6 +84,15 @@ export function useBoardMotion(signature: {
     if (!nodes.length) return;
     animate(nodes, { scale: held ? 1.12 : 1 }, { duration: 0.16 });
   }, [animate, held, reduced, scope]);
+
+  useEffect(() => {
+    if (reduced || !discsMovable || !scope.current) return;
+    const nodes = scope.current.querySelectorAll(selector("disc-ready"));
+    if (!nodes.length) return;
+    // The halo draws attention once, on arrival, rather than looping - a permanent pulse beside a
+    // board you are reading is a distraction, not a hint.
+    animate(nodes, { scale: [0.6, 1.12, 1], opacity: [0, 0.75] }, { duration: 0.45 });
+  }, [animate, discsMovable, reduced, scope]);
 
   return {
     ref: scope,

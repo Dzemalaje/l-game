@@ -27,7 +27,7 @@
     "smoke:online": "node --env-file-if-exists=.env.local tools/smoke-online-stdb.mjs",
     "build:web": "cross-env LGAME_PLATFORM=web expo export --platform web",
     "build": "npm run build:web",
-    "test": "tsx --test src/shared/rules.test.ts src/game/net.test.ts",
+    "test": "tsx --test src/shared/rules.test.ts src/game/net.test.ts src/game/motion.test.ts",
     "smoke:browser": "node tools/smoke-expo-web.mjs",
     "bench": "tsx tools/bench-rules.ts",
     "check": "npm run typecheck && npm run lint && npm test && npm run test:stdb && npm run build && npm run smoke:browser",
