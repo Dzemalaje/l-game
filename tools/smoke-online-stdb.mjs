@@ -169,7 +169,16 @@ try {
   console.log("\nmatchmaking");
   for (const cdp of tabs) await clickText(cdp, "Casual");
   for (const [i, cdp] of tabs.entries()) {
-    await waitFor(() => hasText(cdp, "CASUAL MATCH"), `tab ${i} in a match`, 30_000);
+    // The board only exists inside a match, so its presence is the signal. The old heading it used
+    // to wait for is gone: a match now identifies itself with a chip beside the Leave button.
+    await waitFor(
+      () => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]'))`),
+      `tab ${i} in a match`,
+      30_000,
+    );
+  }
+  for (const [i, cdp] of tabs.entries()) {
+    if (!(await hasText(cdp, "Casual"))) throw new Error(`tab ${i} did not label the match as casual`);
   }
   check("the server matches the two players", true);
 
@@ -204,9 +213,8 @@ try {
       if (!(await clickTarget(cdp))) throw new Error(`no legal target at step ${step + 1}`);
       await wait(60);
     }
-    if (!(await clickText(cdp, "Submit L"))) throw new Error("Submit L was not clickable");
-    await waitFor(() => hasText(cdp, "Skip disc"), "disc phase");
-    await clickText(cdp, "Skip disc");
+    await waitFor(() => hasText(cdp, "End turn"), "disc phase");
+    await clickText(cdp, "End turn");
     moves += 1;
 
     // The opponent must see the move arrive — that is the subscription replicating the new board.

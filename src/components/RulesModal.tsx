@@ -5,9 +5,9 @@ import { UIButton, UICard, UIModal, UIText } from "./ui";
 
 const SLIDES = [
   { title: "Trap the other L", eyebrow: "GOAL", body: "Each player controls one four-square L. Win by leaving your opponent with no legal new position for their L." },
-  { title: "Move your whole L", eyebrow: "STEP 1", body: "Tap four highlighted squares in one continuous L-shaped path. The new L cannot overlap the other player or either neutral disc, and it must change position." },
-  { title: "Move a neutral disc", eyebrow: "STEP 2", body: "After placing your L, you may select either white disc and move it to any highlighted empty square. Moving a disc is optional—choose Skip disc to leave both where they are." },
-  { title: "Finish the turn", eyebrow: "STEP 3", body: "Confirm the disc move or skip it. If the next player cannot reposition their L, the match ends immediately. A clock reaching zero also loses the match." },
+  { title: "Draw your L", eyebrow: "STEP 1", body: "Drag across four highlighted squares in one continuous L-shaped path, or tap them one at a time. The fourth square places the L. It cannot overlap the other player or either disc, and it must change position." },
+  { title: "Drag a neutral disc", eyebrow: "STEP 2", body: "Once your L is placed you may drag either white disc to a highlighted empty square. This is optional. Redraw L takes the shape back if you want a different one." },
+  { title: "End the turn", eyebrow: "STEP 3", body: "End turn commits the L and the disc together. If the next player cannot reposition their L, the match ends immediately. A clock reaching zero also loses the match." },
   { title: "Online play is authoritative", eyebrow: "PLAY", body: "Casual and ranked moves, clocks, reconnect windows, results, and ratings are validated by the server. Queueing, waiting, live, reconnecting, and offline indicators always show the current state." },
 ] as const;
 

@@ -99,6 +99,10 @@ and [submission](https://docs.expo.dev/submit/introduction/) documentation.
 
 - Offline: vs CPU and Pass & Play run entirely in the shared client rule engine, and keep working
   when the server is unreachable.
+- A turn is one gesture: drag through four highlighted squares to place the L, then drag a neutral
+  disc if you want to move one, and End turn commits both. Tapping squares one at a time does the
+  same thing, and the board stays fully keyboard and screen-reader operable.
+- A match fills the screen and never scrolls. On a phone it is laid out inside a 9:16 frame.
 - Online: a connection is issued an identity and given a guest profile automatically. Claiming a
   username is what unlocks ranked play and lets friends find you.
 - Ranked matching begins within ±100 rating, widens by 25 per second, and caps at ±600. The rating

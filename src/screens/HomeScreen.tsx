@@ -11,8 +11,6 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ controller, view, onLegal }: HomeScreenProps) {
-  const [server, setServer] = useState(view.serverUrl);
-
   if (view.namePanel) return <NameEditor controller={controller} view={view} />;
 
   const account = view.account;
@@ -74,20 +72,6 @@ export function HomeScreen({ controller, view, onLegal }: HomeScreenProps) {
         </View>
         <UIButton fullWidth variant="ghost" onPress={() => controller.openRules()}>How to play</UIButton>
       </View>
-
-      <UICard variant="secondary">
-        <View style={{ gap: 10 }}>
-          <UIText type="h3">Connection settings</UIText>
-          <UIText muted>
-            The websocket address of the SpacetimeDB instance. Use your computer’s LAN address when
-            opening the native app on a physical phone.
-          </UIText>
-          <UITextField value={server} onChangeText={setServer} keyboardType="url" autoCapitalize="none" autoComplete="off" accessibilityLabel="SpacetimeDB server URL" />
-          <UIButton size="sm" variant="outline" onPress={() => controller.setServerUrl(server)}>
-            {view.connecting ? "Connecting…" : "Save server"}
-          </UIButton>
-        </View>
-      </UICard>
 
       {view.message ? <UIText align="center" muted accessibilityRole="alert">{view.message}</UIText> : null}
 

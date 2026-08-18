@@ -729,21 +729,57 @@ export class GameController {
         legal = legalContinuations(this.state, this.state.turn, this.drawn);
       }
       if (this.drawn.some((drawn) => sameCell(drawn, cell)) || !legal.some((target) => sameCell(target, cell))) return;
-      this.drawn = [...this.drawn, cell];
-      this.message = this.drawn.length === 4 ? "L ready. Press Submit L." : "Continue through a highlighted square.";
+      this.extendDraw(cell);
     } else if (this.phase === "neutral") {
       const disc = this.state.neutrals.findIndex((neutral) => sameCell(neutral, cell));
       if (disc >= 0) {
         this.selectedNeutral = disc === this.selectedNeutral ? -1 : disc as 0 | 1;
         this.destination = undefined;
-        this.message = this.selectedNeutral < 0 ? "Move a neutral disc, or skip." : "Now choose a highlighted empty square, or skip.";
+        this.message = this.selectedNeutral < 0 ? "Move a disc, or end your turn." : "Drop it on a highlighted square.";
       } else if (this.selectedNeutral >= 0 && isLegalNeutralDestination(this.previewState(), cell)) {
         this.destination = cell;
-        this.message = "Disc ready. Confirm the move.";
+        this.message = "Disc placed. End your turn when ready.";
       }
     }
     this.relayTurnInProgress();
     this.emit();
+  }
+
+  /**
+   * Pointer drag across the board while drawing an L.
+   *
+   * Unlike `selectCell`, an illegal square is ignored rather than restarting the draw: a finger
+   * sliding to the next square passes over whatever lies between it and the target, and wiping the
+   * path every time it clipped a corner made dragging unusable. Sliding back onto the previous
+   * square rubs the last one out, which is what people try first after overshooting.
+   */
+  drawTo(cell: Cell) {
+    if (!this.canAct() || this.phase !== "l") return;
+    const existing = this.drawn.findIndex((drawn) => sameCell(drawn, cell));
+    if (existing >= 0) {
+      if (existing !== this.drawn.length - 2) return;
+      this.drawn = this.drawn.slice(0, -1);
+      this.message = "Keep going through the highlighted squares.";
+      this.relayTurnInProgress();
+      this.emit();
+      return;
+    }
+    const legal = legalContinuations(this.state, this.state.turn, this.drawn);
+    if (!legal.some((target) => sameCell(target, cell))) return;
+    this.extendDraw(cell);
+    this.relayTurnInProgress();
+    this.emit();
+  }
+
+  /**
+   * Adds one square to the drawn path and, once four of them make a legal L, moves straight on to
+   * the disc. The old flow needed a separate Submit press, but a finished L has exactly one legal
+   * meaning, so that press carried no information. `backToDraw` is what makes dropping it safe.
+   */
+  private extendDraw(cell: Cell) {
+    this.drawn = [...this.drawn, cell];
+    if (this.drawn.length === 4 && this.beginDiscPhase()) return;
+    this.message = "Continue through a highlighted square.";
   }
 
   clearDraw() {
@@ -756,21 +792,77 @@ export class GameController {
 
   submitL() {
     if (!this.canAct() || this.phase !== "l") return;
-    const placement = placementForDraw(this.state, this.state.turn, this.drawn);
-    if (!placement) {
+    if (!this.beginDiscPhase()) {
       this.message = "Draw a complete legal L first.";
       this.emit();
       return;
     }
+    this.relayTurnInProgress();
+    this.emit();
+  }
+
+  private beginDiscPhase() {
+    const placement = placementForDraw(this.state, this.state.turn, this.drawn);
+    if (!placement) return false;
     this.ghost = this.state.pieces[this.state.turn].map((cell) => [...cell] as Cell);
     this.pendingL = placement.map((cell) => [...cell] as Cell);
     this.drawn = [];
     this.phase = "neutral";
     this.selectedNeutral = -1;
     this.destination = undefined;
-    this.message = "Move a neutral disc, or skip.";
+    this.message = "Move a disc, or end your turn.";
+    return true;
+  }
+
+  /** Undo a placed L and draw it again. Nothing is committed until `endTurn`, so this costs nothing. */
+  backToDraw() {
+    if (!this.canAct() || this.phase !== "neutral") return;
+    this.pendingL = undefined;
+    this.ghost = undefined;
+    this.drawn = [];
+    this.selectedNeutral = -1;
+    this.destination = undefined;
+    this.phase = "l";
+    this.message = "Draw your L again.";
     this.relayTurnInProgress();
     this.emit();
+  }
+
+  /** A pointer picked up a neutral disc. */
+  pickDisc(index: 0 | 1) {
+    if (!this.canAct() || this.phase !== "neutral") return;
+    this.selectedNeutral = index;
+    this.destination = undefined;
+    this.message = "Drop it on a highlighted square.";
+    this.relayTurnInProgress();
+    this.emit();
+  }
+
+  /** A held disc was dragged over `cell`; only a legal square sticks. */
+  dragDiscTo(cell: Cell) {
+    if (!this.canAct() || this.phase !== "neutral" || this.selectedNeutral < 0) return;
+    if (this.destination && sameCell(this.destination, cell)) return;
+    if (!isLegalNeutralDestination(this.previewState(), cell)) return;
+    this.destination = cell;
+    this.message = "Disc placed. End your turn when ready.";
+    this.relayTurnInProgress();
+    this.emit();
+  }
+
+  /** Puts a held disc back where it started. */
+  returnDisc() {
+    if (!this.canAct() || this.phase !== "neutral") return;
+    this.selectedNeutral = -1;
+    this.destination = undefined;
+    this.message = "Move a disc, or end your turn.";
+    this.relayTurnInProgress();
+    this.emit();
+  }
+
+  /** Commits the turn: with the disc move when one was made, without it otherwise. */
+  endTurn() {
+    if (this.selectedNeutral >= 0 && this.destination) return this.commitTurn(this.selectedNeutral, this.destination);
+    this.commitTurn(-1);
   }
 
   confirmDisc() {
@@ -1014,7 +1106,7 @@ export class GameController {
       if (this.remote?.drawn.length) return `${opponent} is drawing an L…`;
       return `Waiting for ${opponent}.`;
     }
-    const action = this.phase === "neutral" ? "move a neutral disc, then confirm or skip" : "tap through the highlighted squares";
+    const action = this.phase === "neutral" ? "drag a disc, or end your turn" : "drag through four highlighted squares";
     return this.mode === "local" ? `${this.sideName(this.state.turn)}: ${action}.` : `${action[0].toUpperCase()}${action.slice(1)}.`;
   }
 
@@ -1099,6 +1191,9 @@ export class GameController {
       canSubmitL: this.canAct() && this.phase === "l" && this.drawn.length === 4,
       canClear: this.canAct() && this.phase === "l" && this.drawn.length > 0,
       canConfirmDisc: this.canAct() && this.phase === "neutral" && Boolean(this.destination),
+      canEndTurn: this.canAct() && this.phase === "neutral",
+      canUndoL: this.canAct() && this.phase === "neutral",
+      discHeld: this.phase === "neutral" && this.selectedNeutral >= 0,
       resultOpen: this.resultOpen,
       leaveConfirmOpen: this.leaveConfirmOpen,
       result,

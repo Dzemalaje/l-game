@@ -63,6 +63,12 @@ export interface GameView {
   canSubmitL: boolean;
   canClear: boolean;
   canConfirmDisc: boolean;
+  /** Whether the turn can be committed now - the L is placed, with or without a disc move. */
+  canEndTurn: boolean;
+  /** Whether the placed L can still be taken back and redrawn. */
+  canUndoL: boolean;
+  /** Whether a neutral disc is currently picked up. */
+  discHeld: boolean;
   resultOpen: boolean;
   leaveConfirmOpen: boolean;
   result?: { title: string; detail: string; action: string };

@@ -164,7 +164,7 @@ The interface should feel like a well-kept tabletop game: warm paper around a co
 
 The system is adaptive, not visually identical across platforms. Shared React components preserve meaning and brand, while HeroUI React supplies web interaction conventions and HeroUI Native supplies iOS and Android controls, scaling, gestures, and surfaces. The web and native wrappers must expose the same product-level variants without erasing platform behavior.
 
-The voice is direct and instructional. Short labels such as “Submit L,” “Skip disc,” “Reconnecting,” and “Return home” explain the next action or current state without game-themed flourish.
+The voice is direct and instructional. Short labels such as “End turn,” “Redraw L,” “Reconnecting,” and “Return home” explain the next action or current state without game-themed flourish.
 
 **Key Characteristics:**
 
@@ -329,7 +329,7 @@ The same React Native SVG board renders on web, iOS, and Android. It uses a 400-
 - Sixteen transparent `Pressable` regions sit above the SVG, one per 25% cell. They keep touch, pointer, keyboard, test, and screen-reader interaction independent from drawing.
 - Each cell exposes a coordinate (`A1`–`D4`), occupancy or legal-target description, disabled state, and a build-move hint when actionable. Drawn L squares, the selected neutral disc, and its pending destination expose selected state and explicit progress descriptions; legal targets are described without being misreported as selected.
 
-The board accepts input only while the player can act and the result modal is closed. The action panel mirrors the two phases: build and submit the L, then optionally move or skip a neutral disc. Clear, Submit L, Skip disc, and Confirm move remain adjacent to the board and reflect legal availability through disabled state.
+The board accepts input only while the player can act and the result modal is closed. An L is drawn by dragging through four highlighted squares, or by tapping them one at a time; the fourth square places the shape, so there is no separate submit step. A neutral disc is then dragged to a highlighted empty square, or left alone. Clear, Redraw L, and End turn sit directly beneath the board and reflect legal availability through disabled state.
 
 ### Rules and results
 

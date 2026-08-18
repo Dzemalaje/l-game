@@ -48,6 +48,7 @@
     "expo-status-bar": "~57.0.0",
     "expo-web-browser": "~57.0.2",
     "heroui-native": "1.0.8",
+    "motion": "^13.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.2",

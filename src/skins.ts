@@ -17,6 +17,14 @@ export interface BoardSkin {
 export const css = ([r, g, b]: Rgb) => `rgb(${r} ${g} ${b})`;
 
 /**
+ * The same colour at a given opacity, for tinting a surface with a side's identity.
+ *
+ * Written as `rgba(...)` rather than an eight-digit hex or a slash-separated `rgb()`, because those
+ * two forms are where React Native and the browser disagree; this one both accept.
+ */
+export const cssAlpha = ([r, g, b]: Rgb, alpha: number) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
+
+/**
  * Piece skins are plain colour pairs rather than animated effects. Every pair keeps one warm and
  * one cool side so the two players stay distinguishable at a glance, and both stay legible on the
  * cream-and-sage board.
