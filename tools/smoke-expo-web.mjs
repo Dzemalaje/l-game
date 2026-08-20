@@ -74,6 +74,8 @@ const browser = spawn(browserPath, [
 
 let cdp;
 let root;
+/** Clicks by test id. Declared up here because the intro runs before the main helper block. */
+const clickTestIdEarly = (id) => cdp.eval(`(() => { const node = document.querySelector(${JSON.stringify('[data-testid="ID"]')}.replace("ID", ${JSON.stringify(id)})); if (!node) return false; node.click(); return true; })()`);
 try {
   await waitFor(() => fetch(`http://127.0.0.1:${PORT}/`).then((response) => response.ok), "Expo production server");
   const version = await waitFor(() => fetch(`http://127.0.0.1:${DEBUG_PORT}/json/version`).then((response) => response.json()), "browser debugger");
@@ -85,14 +87,43 @@ try {
   await cdp.send("Emulation.setDeviceMetricsOverride", { width: 430, height: 900, deviceScaleFactor: 2, mobile: true });
   await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
   await cdp.send("Page.navigate", { url: `http://127.0.0.1:${PORT}/` });
-  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play vs CPU")`), "home screen");
+
+  mkdirSync(SHOTS, { recursive: true });
+  const byText = (pattern) => cdp.eval(`(() => { const node = [...document.querySelectorAll('button, [role="button"]')].find((candidate) => ${pattern}.test(candidate.textContent ?? '')); if (!node) return false; node.click(); return true; })()`);
+
+  // A first run opens on what the game is, not on a list of match types. Every later assertion
+  // here assumes the lobby, so the intro is walked once and then dismissed the way a returning
+  // player would have dismissed it - which is also what proves the flag is actually persisted.
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Trap the other")`), "first-run welcome screen");
+  const welcomeShot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  writeFileSync(join(SHOTS, "expo-welcome.png"), Buffer.from(welcomeShot.data, "base64"));
+
+  // The tutorial is a real board wired to the real rules engine, so rendering it at all is worth
+  // asserting: a crash here would otherwise only show up on somebody's very first launch.
+  if (!await byText(/Learn it/)) throw new Error("The welcome screen did not offer the tutorial");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Step 1 of 5")`), "tutorial first step");
+  if (!await cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]'))`)) {
+    throw new Error("The tutorial did not render a board");
+  }
+  if (!await clickTestIdEarly("tutorial-next")) throw new Error("The tutorial could not be advanced");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Now move your L")`), "tutorial move step");
+  const tutorialShot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  writeFileSync(join(SHOTS, "expo-tutorial.png"), Buffer.from(tutorialShot.data, "base64"));
+  // Its second step is playable, so it must be offering legal squares to tap.
+  const tutorialTargets = await cdp.eval(`document.querySelectorAll('[data-lg="target"]').length`);
+  if (!tutorialTargets) throw new Error("The tutorial lit no legal squares to trace");
+
+  if (!await byText(/just play|Skip/)) throw new Error("The intro offered no way past it");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play the computer")`), "home screen");
+  const introFlag = await cdp.eval(`localStorage.getItem("lgame.introSeen") ?? ""`);
+  if (!introFlag) throw new Error("Dismissing the intro did not record that it had been seen");
   // A stale but well-formed server must not strip the app of offline play.
   await cdp.eval(`(() => {
     localStorage.setItem("lgame.server", "ws://stale.invalid:3000");
     localStorage.setItem("lgame.authToken", "stale-test-token");
   })()`);
   await cdp.send("Page.reload");
-  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play vs CPU")`), "home after reload");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play the computer")`), "home after reload");
   // Regression: a malformed stored address used to reach the SpacetimeDB SDK untouched and fail
   // inside `new URL(...)`, leaving the app permanently offline with a browser-specific error about
   // a string the player never typed in that form. It must now be discarded and rewritten on load.
@@ -103,7 +134,7 @@ try {
     localStorage.setItem("lgame.server", "http//:127.0.0.1:3000");
   })()`);
   await cdp.send("Page.reload");
-  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play vs CPU")`), "home after malformed server");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play the computer")`), "home after malformed server");
   const healed = await waitFor(
     async () => {
       const value = await cdp.eval(`localStorage.getItem("lgame.server") ?? ""`);
@@ -120,11 +151,33 @@ try {
   // before the run-wide console-error assertion below.
   cdp.events.length = 0;
 
-  mkdirSync(SHOTS, { recursive: true });
   const mobile = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   writeFileSync(join(SHOTS, "expo-home-mobile.png"), Buffer.from(mobile.data, "base64"));
 
-  const clickText = (text) => cdp.eval(`(() => { const button = [...document.querySelectorAll('button')].find((node) => node.textContent.trim() === ${JSON.stringify(text)}); if (!button) return false; button.click(); return true; })()`);
+  // The three secondary tabs render live rows, cosmetic previews and empty states that nothing else
+  // here exercises. Opening each one is cheap and is the difference between a crash shipping and not.
+  for (const [tab, heading] of [["leaders", "Leaderboard"], ["friends", "Friends"], ["locker", "Locker"]]) {
+    if (!await clickTestIdEarly(`tab-${tab}`)) throw new Error(`The ${tab} tab was not clickable`);
+    await waitFor(() => cdp.eval(`document.body.innerText.includes(${JSON.stringify(heading)})`), `${tab} screen`);
+    const shot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+    writeFileSync(join(SHOTS, `expo-${tab}.png`), Buffer.from(shot.data, "base64"));
+  }
+  if (!await clickTestIdEarly("tab-play")) throw new Error("The play tab was not clickable");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play the computer")`), "home after the tab sweep");
+
+  // HeroUI renders real <button>s; the board-side chrome is react-native-web Pressables, which
+  // render as div[role="button"]. Both have to be clickable for this walkthrough to mean anything.
+  const CLICKABLE = `'button, [role="button"]'`;
+  const clickText = (text) => cdp.eval(`(() => { const button = [...document.querySelectorAll(${CLICKABLE})].find((node) => node.textContent.trim() === ${JSON.stringify(text)} && node.getAttribute('aria-disabled') !== 'true'); if (!button) return false; button.click(); return true; })()`);
+  /**
+   * Clicks a control by its test id.
+   *
+   * Lobby rows carry a title and a description inside one target, so matching their whole text is
+   * brittle in a way that has nothing to do with what is being tested.
+   */
+  const clickTestId = (id) => cdp.eval(`(() => { const node = document.querySelector('[data-testid=' + ${JSON.stringify(JSON.stringify(id))} + ']'); if (!node) return false; node.click(); return true; })()`);
+  /** Clicks a control that shows an icon rather than a word, by its accessible name. */
+  const clickLabel = (label) => cdp.eval(`(() => { const button = [...document.querySelectorAll(${CLICKABLE})].find((node) => node.getAttribute('aria-label') === ${JSON.stringify(label)}); if (!button) return false; button.click(); return true; })()`);
   const hasText = (text) => cdp.eval(`document.body.innerText.includes(${JSON.stringify(text)})`);
   const clickTarget = (pick) => cdp.eval(`(() => {
     const cells = [...document.querySelectorAll('[data-testid^="board-cell-"]')].filter((node) => node.getAttribute('aria-label')?.includes('legal target'));
@@ -241,12 +294,12 @@ try {
         await wait(20);
       }
       if (await hasText("End turn")) return true;
-      if (await hasText("Return home")) return true;
+      if (await hasText("Back to menu")) return true;
     }
     return false;
   };
 
-  if (!await clickText("Play vs CPU")) throw new Error("Play vs CPU button was not clickable");
+  if (!await clickTestId("home-hero")) throw new Error("The play-the-computer button was not clickable");
   await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]'))`), "game board");
   const matchShot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   writeFileSync(join(SHOTS, "expo-match-mobile.png"), Buffer.from(matchShot.data, "base64"));
@@ -275,52 +328,60 @@ try {
   if (!animated) throw new Error("Motion did not apply any inline style to the board shapes");
   await waitFor(() => hasText("End turn"), "disc phase after a completed L");
   if (!await clickText("End turn")) throw new Error("End turn was not clickable");
-  await waitForScreen(() => cdp.eval(`document.body.innerText.includes("Return home") || (document.body.innerText.includes("Drag through") && !document.body.innerText.includes("CPU is"))`), "completed CPU turn", 8_000);
-  let cpuFinished = await cdp.eval(`document.body.innerText.includes("Return home")`);
+  await waitForScreen(() => cdp.eval(`document.body.innerText.includes("Back to menu") || (document.body.innerText.includes("Trace your new L") && !document.body.innerText.includes("computer is deciding"))`), "completed CPU turn", 8_000);
+  let cpuFinished = await cdp.eval(`document.body.innerText.includes("Back to menu")`);
   for (let turn = 1; turn < 30 && !cpuFinished; turn++) {
     if (!await drawL(turn * 11)) throw new Error(`Could not complete an L on CPU match turn ${turn + 1}`);
-    if (await cdp.eval(`document.body.innerText.includes("Return home")`)) { cpuFinished = true; break; }
+    if (await cdp.eval(`document.body.innerText.includes("Back to menu")`)) { cpuFinished = true; break; }
     if (!await clickText("End turn")) throw new Error(`Could not end CPU match turn ${turn + 1}`);
-    await waitForScreen(() => cdp.eval(`document.body.innerText.includes("Return home") || (document.body.innerText.includes("Drag through") && !document.body.innerText.includes("CPU is"))`), `CPU response ${turn + 1}`, 8_000);
-    cpuFinished = await cdp.eval(`document.body.innerText.includes("Return home")`);
+    await waitForScreen(() => cdp.eval(`document.body.innerText.includes("Back to menu") || (document.body.innerText.includes("Trace your new L") && !document.body.innerText.includes("computer is deciding"))`), `CPU response ${turn + 1}`, 8_000);
+    cpuFinished = await cdp.eval(`document.body.innerText.includes("Back to menu")`);
   }
   if (!cpuFinished) throw new Error("vs CPU did not reach a result within 30 player turns");
-  if (!await clickText("Play again")) throw new Error("vs CPU Play again action was not clickable");
-  await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]')) && !document.body.innerText.includes("Return home")`), "restarted CPU match");
-  await clickText("Leave");
-  await waitFor(() => cdp.eval(`document.body.innerText.includes("Pass & Play")`), "return home");
+  // The result is a screen now, not a dialog, so it is worth looking at rather than only asserting.
+  await wait(250);
+  const resultShot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  writeFileSync(join(SHOTS, "expo-match-result.png"), Buffer.from(resultShot.data, "base64"));
+  // A finished match must say how it ended, not just who won.
+  if (!await hasText("no legal square left")) {
+    throw new Error("The result screen did not explain how the match ended");
+  }
+  if (!await clickTestId("result-again")) throw new Error("vs CPU Play again action was not clickable");
+  await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]')) && !document.body.innerText.includes("Back to menu")`), "restarted CPU match");
+  await clickLabel("Leave this match");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Pass and play")`), "return home");
 
   // Regression: completed CPU/local matches used to freeze behind an inert parent. Drive a full
-  // deterministic Pass & Play game, then verify the result action starts a fresh match.
-  await clickText("Pass & Play");
-  await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]'))`), "Pass & Play board");
+  // deterministic Pass and play game, then verify the result action starts a fresh match.
+  await clickTestId("home-local");
+  await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]'))`), "Pass and play board");
 
   // Drawing an L by dragging, and moving a disc by dragging it, are the two gestures the board
-  // exists for. Pass & Play is where they can be checked without a CPU clock racing the assertions.
+  // exists for. Pass and play is where they can be checked without a CPU clock racing the assertions.
   if (!await dragL()) throw new Error("Dragging across the board did not place an L");
   if (!await dragDisc()) throw new Error("Dragging a neutral disc did not move it to a legal square");
   if (!await clickText("End turn")) throw new Error("End turn after the dragged move was not clickable");
 
   // The run below is deterministic from the opening position, so the dragged turn gets its own
   // match rather than shifting every position after it.
-  await clickText("Leave");
-  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play vs CPU")`), "home after the drag checks");
-  await clickText("Pass & Play");
-  await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]'))`), "fresh Pass & Play board");
+  await clickLabel("Leave this match");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play the computer")`), "home after the drag checks");
+  await clickTestId("home-local");
+  await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]'))`), "fresh Pass and play board");
 
   let finished = false;
   for (let turn = 0; turn < 120 && !finished; turn++) {
-    if (!await drawL(turn * 7)) throw new Error(`Could not complete an L on Pass & Play turn ${turn + 1}`);
-    if (await cdp.eval(`document.body.innerText.includes("Return home")`)) { finished = true; break; }
-    if (!await clickText("End turn")) throw new Error(`Could not end Pass & Play turn ${turn + 1}`);
+    if (!await drawL(turn * 7)) throw new Error(`Could not complete an L on Pass and play turn ${turn + 1}`);
+    if (await cdp.eval(`document.body.innerText.includes("Back to menu")`)) { finished = true; break; }
+    if (!await clickText("End turn")) throw new Error(`Could not end Pass and play turn ${turn + 1}`);
     await wait(8);
-    finished = await cdp.eval(`document.body.innerText.includes("Return home")`);
+    finished = await cdp.eval(`document.body.innerText.includes("Back to menu")`);
   }
-  if (!finished) throw new Error("Pass & Play did not reach a result within 120 deterministic turns");
-  if (!await clickText("Play again")) throw new Error("Completed-match Play again action was not clickable");
-  await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]')) && !document.body.innerText.includes("Return home")`), "restarted Pass & Play match");
-  await clickText("Leave");
-  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play vs CPU")`), "home after completed match");
+  if (!finished) throw new Error("Pass and play did not reach a result within 120 deterministic turns");
+  if (!await clickTestId("result-again")) throw new Error("Completed-match Play again action was not clickable");
+  await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]')) && !document.body.innerText.includes("Back to menu")`), "restarted Pass and play match");
+  await clickLabel("Leave this match");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play the computer")`), "home after completed match");
 
   await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await wait(300);
@@ -328,13 +389,13 @@ try {
   writeFileSync(join(SHOTS, "expo-home-desktop.png"), Buffer.from(desktop.data, "base64"));
 
   // The match is one fixed-width column on desktop too, so it is worth seeing rather than assuming.
-  await clickText("Play vs CPU");
+  await clickTestId("home-hero");
   await waitFor(() => cdp.eval(`Boolean(document.querySelector('[data-testid="game-board"]'))`), "desktop match board");
   await wait(300);
   const desktopMatch = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   writeFileSync(join(SHOTS, "expo-match-desktop.png"), Buffer.from(desktopMatch.data, "base64"));
-  await clickText("Leave");
-  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play vs CPU")`), "home after the desktop match");
+  await clickLabel("Leave this match");
+  await waitFor(() => cdp.eval(`document.body.innerText.includes("Play the computer")`), "home after the desktop match");
 
   // This run is deliberately offline, so the client failing to open a websocket to a SpacetimeDB
   // that is not running is the expected condition, not a defect. Everything else still counts.

@@ -22,6 +22,7 @@ import {
   sameCell,
 } from "./rules";
 import type { Cell, GameState } from "./types";
+import { TRAPPED_POSITION } from "./positions";
 
 /** Small Jest-style facade keeps these domain tests readable while using Node's built-in runner. */
 function expect<T>(actual: T, message?: string) {
@@ -288,5 +289,28 @@ describe("wire hardening", () => {
       neutral: -1,
       destination: undefined,
     });
+  });
+});
+
+describe("the tutorial's finished position", () => {
+  it("really is a win: the outlined L has no legal placement left", () => {
+    const state: GameState = {
+      pieces: [
+        TRAPPED_POSITION.pieces[0].map((cell) => [...cell] as Cell),
+        TRAPPED_POSITION.pieces[1].map((cell) => [...cell] as Cell),
+      ],
+      neutrals: [[...TRAPPED_POSITION.neutrals[0]] as Cell, [...TRAPPED_POSITION.neutrals[1]] as Cell],
+      turn: 1,
+      winner: -1,
+      turnNumber: 12,
+    };
+    // The tutorial's last slide tells the player this is a win. If the move generator ever
+    // disagrees, the lesson is teaching something false and this test is the only thing that says
+    // so - the screen itself would look perfectly convincing.
+    expect(legalLPlacementCount(state, 1)).toBe(0);
+    // And it is a real position, not a stalemate for both: the winner still has moves.
+    expect(legalLPlacementCount(state, 0)).toBeGreaterThan(0);
+    // No piece or disc overlaps another.
+    expect(maskOf([...state.pieces[0], ...state.pieces[1], ...state.neutrals])).not.toBe(-1);
   });
 });

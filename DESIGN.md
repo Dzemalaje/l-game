@@ -1,96 +1,97 @@
 ---
 name: The L Game
-description: A quiet, board-first adaptive interface for fast abstract-strategy matches.
+description: A dark, board-first interface where the lit play surface is the only bright object and every screen states the next legal action.
 colors:
-  white: "#ffffff"
-  paper: "#f4f0e6"
-  paper-raised: "#f8f5ed"
-  surface: "#fffdf7"
-  ink: "#252b29"
-  ink-muted: "#626a65"
-  placeholder: "#7b817d"
-  line: "#d8d1c2"
-  field-line: "#b9b2a3"
-  progress-dot: "#c8c1b2"
-  sage: "#879c88"
-  sage-dark: "#556b59"
-  sage-pressed: "#435648"
-  sage-soft: "#dfe7dc"
-  sage-soft-hover: "#d2ddcf"
-  sage-wash: "#e8eee5"
-  sage-border: "#c7d3c4"
-  sage-outline: "#6c7c6e"
-  brand-red: "#c4473f"
-  brand-blue: "#386c8f"
-  danger: "#a43f38"
-  danger-pressed: "#8d342f"
-  timer-danger: "#b42318"
-  status-success-bg: "#dcebdd"
-  status-success-fg: "#2d6038"
-  status-warning-bg: "#f3e5bd"
-  status-warning-fg: "#725619"
-  status-danger-bg: "#f2d7d4"
-  status-danger-fg: "#8d342f"
-  status-default-bg: "#e5e1d7"
-  status-default-fg: "#3f4742"
+  stage: "#0d1411"
+  stage-deep: "#080d0b"
+  panel: "#16211c"
+  panel-raised: "#1f2d27"
+  panel-sunken: "#101a15"
+  edge: "#22302a"
+  edge-mid: "#2c3b34"
+  edge-strong: "#33443e"
+  text: "#f2efe4"
+  text-dim: "#9fb0a6"
+  text-muted: "#8b9d93"
+  text-faint: "#71847a"
+  text-ghost: "#5d6f66"
+  mint: "#7fd6a6"
+  mint-press: "#6ac492"
+  mint-ink: "#08150e"
+  amber: "#e8b562"
+  danger: "#e5695c"
+  danger-press: "#c9564a"
+  board-frame: "#3f5a48"
+  board-frame-edge: "#55755c"
   board-light: "#e8dfc9"
   board-dark: "#91a878"
   board-outline: "#38563c"
-  board-frame: "#435c49"
   classic-player-red: "#cf5c4f"
   classic-player-blue: "#4778ad"
   neutral-disc: "#f8f5ec"
 typography:
   display:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
-    fontSize: "2.25rem"
-    fontWeight: 600
-    lineHeight: 1.111
-    letterSpacing: "-0.025em"
+    fontFamily: "Archivo, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "40px"
+    fontWeight: 800
+    lineHeight: 1.05
+    letterSpacing: "-0.035em"
   headline:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.875rem"
-    fontWeight: 600
-    lineHeight: 1.2
-    letterSpacing: "-0.025em"
+    fontFamily: "Archivo, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "26px"
+    fontWeight: 800
+    lineHeight: 1.1
+    letterSpacing: "-0.03em"
+  hero:
+    fontFamily: "Archivo, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "23px"
+    fontWeight: 800
+    lineHeight: 1.17
+    letterSpacing: "-0.03em"
   title:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.5rem"
-    fontWeight: 600
-    lineHeight: 1.333
-    letterSpacing: "-0.025em"
+    fontFamily: "Archivo, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "18px"
+    fontWeight: 700
+    lineHeight: 1.22
+    letterSpacing: "-0.015em"
   body:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1rem"
+    fontFamily: "Archivo, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "14.5px"
     fontWeight: 400
-    lineHeight: 1.75
+    lineHeight: 1.45
   supporting:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.875rem"
+    fontFamily: "Archivo, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "12.5px"
     fontWeight: 400
-    lineHeight: 1.714
+    lineHeight: 1.4
   caption:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.75rem"
+    fontFamily: "Archivo, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "11.5px"
     fontWeight: 400
-    lineHeight: 1.667
-  label:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1rem"
-    fontWeight: 500
-    lineHeight: 1.5
+    lineHeight: 1.35
+  eyebrow:
+    fontFamily: "Archivo, 'Helvetica Neue', Arial, sans-serif"
+    fontSize: "10px"
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: "0.16em"
+    textTransform: "uppercase"
+  numeric:
+    fontFamily: "'Azeret Mono', ui-monospace, 'SF Mono', Menlo, monospace"
+    fontSize: "19px"
+    fontWeight: 700
+    letterSpacing: "-0.02em"
 rounded:
-  dot: "4px"
-  base: "8px"
-  field-web: "12px"
-  field-native: "14px"
-  ghost-cell: "16px"
-  skin-preview: "18px"
-  piece: "19px"
+  pip: "3px"
+  ribbon: "10px"
+  glyph: "12px"
+  control: "14px"
+  card: "16px"
+  panel: "18px"
+  hero: "20px"
   board: "20px"
-  card: "24px"
-  pill: "24px"
-  pill-lg: "32px"
+  piece: "19%"
+  chip: "999px"
 spacing:
   "1": "4px"
   "1-5": "6px"
@@ -99,260 +100,284 @@ spacing:
   "3": "12px"
   "3-5": "14px"
   "4": "16px"
-  "4-5": "18px"
   "5": "20px"
   "6": "24px"
 components:
-  button-primary-web:
-    backgroundColor: "{colors.sage-dark}"
-    textColor: "{colors.white}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0 16px"
-    height: "40px"
-  button-primary-web-hover:
-    backgroundColor: "{colors.sage-pressed}"
-    textColor: "{colors.white}"
-  button-primary-native:
-    backgroundColor: "{colors.sage-dark}"
-    textColor: "{colors.white}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0 16px"
-    height: "48px"
-  button-secondary:
-    backgroundColor: "{colors.sage-soft}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-  card-default:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
+  action-primary:
+    backgroundColor: "{colors.mint}"
+    textColor: "{colors.mint-ink}"
+    fontWeight: 700
+    rounded: "{rounded.control}"
+    minHeight: "48px"
+  action-primary-disabled:
+    backgroundColor: "{colors.panel-raised}"
+    borderColor: "{colors.edge-strong}"
+    textColor: "{colors.text-faint}"
+  action-secondary:
+    backgroundColor: "{colors.panel}"
+    borderColor: "{colors.edge-strong}"
+    textColor: "{colors.text-dim}"
+    rounded: "{rounded.control}"
+    minHeight: "48px"
+  panel-default:
+    backgroundColor: "{colors.panel}"
+    borderColor: "{colors.edge}"
     rounded: "{rounded.card}"
-    padding: "16px"
-  card-secondary:
-    backgroundColor: "{colors.sage-wash}"
-    textColor: "{colors.ink}"
+    padding: "13px"
+  directive-live:
+    backgroundColor: "rgba(127, 214, 166, 0.05)"
+    borderColor: "rgba(127, 214, 166, 0.22)"
     rounded: "{rounded.card}"
-    padding: "16px"
-  input-web:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.field-web}"
-    padding: "8px 12px"
-  input-native:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.field-native}"
-    padding: "0 12px"
-    height: "48px"
+  seat-active:
+    backgroundColor: "the acting side's piece colour at 14%"
+    borderColor: "the acting side's piece colour at 50%"
+    rounded: "{rounded.control}"
   game-board:
-    backgroundColor: "{colors.board-light}"
+    frameColor: "{colors.board-frame}"
     rounded: "{rounded.board}"
-    width: "min(100%, 560px)"
+    padding: "5px"
+    shadow: "the acting side's piece colour, 0 14px 28px, 45% opacity"
 ---
 
 # Design System: The L Game
 
 ## Overview
 
-**Creative North Star: "The Quiet Strategy Table"**
+**Creative North Star: "One Lit Board in a Dark Room"**
 
-The interface should feel like a well-kept tabletop game: warm paper around a compact field of play, sage structure, and a small number of decisive marks. It is calm rather than decorative. The board, the active side, the clock, and the next legal action form the visual hierarchy; account, social, cosmetic, and legal surfaces remain supportive.
+The interface is a darkened room with a single illuminated object in it. Everything that is not the
+play surface — chrome, seats, panels, navigation — sits in near-black greens and recedes. The board
+keeps the warm cream-and-sage palette of a physical board, so it is the brightest thing on any
+screen by construction rather than by emphasis, and it carries a coloured lift tinted with whichever
+side is on the move.
 
-The system is adaptive, not visually identical across platforms. Shared React components preserve meaning and brand, while HeroUI React supplies web interaction conventions and HeroUI Native supplies iOS and Android controls, scaling, gestures, and surfaces. The web and native wrappers must expose the same product-level variants without erasing platform behavior.
-
-The voice is direct and instructional. Short labels such as “End turn,” “Redraw L,” “Reconnecting,” and “Return home” explain the next action or current state without game-themed flourish.
+Around that board, the interface has one job: say what the player is meant to do next, and which of
+their options can do anything right now. Every match state produces a single structured directive —
+whose move it is, which half of the turn it is, one instruction, and how far through it you are —
+and a fixed row of three action slots that never move or disappear.
 
 **Key Characteristics:**
 
-- Warm, light-only paper foundation with cream surfaces and sage hierarchy.
-- Board-first composition with limited chrome and generous breathing room.
-- Warm-versus-cool player identity, reinforced by names and status copy.
-- Rounded, tactile controls from HeroUI; no bespoke web controls on native.
-- Visible connection, clock, and result authority at every match stage.
+- Dark, desaturated green-black ground with the untouched board palette as the only bright surface.
+- The board's shadow is tinted with the acting side's colour: whose turn it is reads before any text.
+- One instruction panel per state, sized to be read at a glance rather than squeezed into a status line.
+- Three action slots, always all three; an unavailable control greys out and says why.
+- One mint action colour, used for exactly one primary per screen.
+- A first run that teaches by playing rather than by reading.
 
 ## Colors
 
-The palette is a restrained mix of paper neutrals and botanical greens; red and blue carry player identity, while semantic tints communicate service state.
+The palette is a dark botanical neutral with one luminous accent, plus the warm board colours it
+exists to frame.
 
 ### Primary
 
-- **Table Sage** (`sage-dark`): the main action color, selected cosmetic state, active rules progress, and core brand accent.
-- **Pressed Sage** (`sage-pressed`): web hover/pressed feedback and the darker board-frame edge.
-- **Soft Sage** (`sage-soft`, `sage-wash`): secondary actions, selected cards, explanatory panels, current-player surfaces, and empty states.
+- **Mint** (`mint`): the one action colour. It carries the single primary control on any screen and
+  nothing else. Dark ink sits on it, never white.
+- **Pressed Mint** (`mint-press`): the pressed and hovered state.
+- **Mint Ink** (`mint-ink`): the near-black used for text on mint.
 
 ### Secondary
 
-- **Player Red** (`brand-red`): the durable identity token for the warm side.
-- **Player Blue** (`brand-blue`): the durable identity token for the cool side.
-- **Classic Piece Red / Blue** (`classic-player-red`, `classic-player-blue`): the rendered Classic skin. These gameplay colors are intentionally brighter than the root identity tokens.
-
-Alternative piece skins may change the hues, but every pair keeps one warm side and one cool side and supplies readable side names. The implemented pairs are Classic Red/Blue, Orchard Plum/Teal, Ember Amber/Indigo, Foundry Rust/Steel, Orchid Rose/Violet, and Signal Coral/Slate.
+- **Player Red / Player Blue** (`classic-player-red`, `classic-player-blue`): the default side
+  identities, and the source of every tint that means "this side". Alternative skins in `skins.ts`
+  change the hues but always keep one warm and one cool side with readable names.
+- The acting side's colour tints three things at once: the board's lift, the active seat's fill and
+  border, and the directive's badge. They are always the same colour at the same moment.
 
 ### Tertiary
 
-- **Connected Green** (`status-success-bg`, `status-success-fg`): online and connected states.
-- **Attention Amber** (`status-warning-bg`, `status-warning-fg`): queueing, waiting, and reconnecting states.
-- **Authority Red** (`status-danger-bg`, `status-danger-fg`): disconnected or failed states; solid `danger` is reserved for destructive controls.
-- **Clock Red** (`timer-danger`): an active player clock at 30 seconds or less.
+- **Amber** (`amber`): queueing, waiting, reconnecting, and any requirement standing between the
+  player and a mode they wanted.
+- **Danger** (`danger`): clock pressure at 30 seconds or less, disconnection, and destructive
+  controls.
 
 ### Neutral
 
-- **Game Paper** (`paper`): the app background and browser theme color.
-- **Raised Paper** (`paper-raised`): header and fixed navigation surfaces.
-- **Porcelain Surface** (`surface`): cards and fields.
-- **Charcoal Ink** (`ink`): primary text.
-- **Quiet Ink** (`ink-muted`): supporting copy and non-critical messages.
-- **Hairline** (`line`): header, navigation, and card separation.
-- **Field Hairline** (`field-line`): input boundaries.
-- **Sage Board** (`board-light`, `board-dark`, `board-outline`): the default checkerboard and its structural outline.
-- **Neutral Disc** (`neutral-disc`): movable neutral pieces; selection is shown by size and a player-colored ring.
+- **Stage** (`stage`, `stage-deep`): the app ground and the deeper letterbox behind the playfield.
+- **Panel / Raised / Sunken** (`panel`, `panel-raised`, `panel-sunken`): cards and rows, their
+  pressed state, and surfaces that sit below the page such as fields and the tab bar.
+- **Edges** (`edge`, `edge-mid`, `edge-strong`): hairlines in rising strength.
+- **Text** (`text` → `text-ghost`): a warm paper white and four steps down from it. The white is warm
+  on purpose; a neutral grey reads blue against these greens.
+- **Board** (`board-light`, `board-dark`, `board-outline`, `board-frame`): carried over unchanged
+  from the printed board. Do not darken them to "match" the interface — the contrast is the design.
 
-**The Gameplay Color Rule.** Never use color alone to identify a player or a network state. Pair it with side names, player names, status text, selection geometry, and accessible labels.
+**The Gameplay Color Rule.** Never use colour alone to identify a player or a network state. Pair it
+with side names, player names, status text, selection geometry, and accessible labels. The match
+screen names both sides in every seat; the tutorial carries an explicit legend.
 
-**The Red Reserve Rule.** Player red may fill game pieces; destructive red belongs to destructive actions and error states; timer red appears only under immediate clock pressure.
+**The Two Rings Rule.** The board draws several dashed rings and they must stay tellable apart by
+size and weight, not only by colour: the trail where an L was is small and finely dashed, the halo
+saying a disc is live is large and boldly dashed, and a ring that lands on top of a piece is drawn
+in paper white, because a ring in the piece's own colour is invisible.
 
 ## Typography
 
-**Display and Body Font:** the platform system sans through HeroUI and Uniwind. Web resolves to a system UI stack; native retains the iOS or Android system face. No custom font is loaded.
+**Display and body:** Archivo on web, loaded from Google Fonts in `app/+html.tsx`. Native keeps the
+platform system face: loading webfonts there would add a dependency and give up the platform's own
+text scaling, which the board-first layout depends on.
 
-**Character:** compact, contemporary, and highly legible. Weight and size establish hierarchy; the system does not rely on decorative type, italics, or dramatic tracking.
+**Numerals:** Azeret Mono for clocks, ratings, ranks, turn counts, and the numbers drawn on traced
+squares. Anything whose digits change while being watched is monospaced so the row does not shift.
 
 ### Hierarchy
 
-- **Display** (`display`, HeroUI `h1`): page titles and the current rules-slide title.
-- **Headline** (`headline`, HeroUI `h2`): section headings, player ratings, major empty-state messages, and active clocks.
-- **Title** (`title`, HeroUI `h3`): app wordmark, match type, card subheads, ranks, and compact numeric emphasis.
-- **Body** (`body`, HeroUI `body`): instructions, legal copy, form content, and ordinary state messages.
-- **Supporting** (`supporting`, HeroUI `body-sm`): role, connection detail, records, and subordinate metadata.
-- **Caption** (`caption`, HeroUI `body-xs`): compact player roles and similarly secondary labels.
-- **Label** (`label`): button, tab, field, and chip labels. Medium, semibold, and bold are intentional emphasis variants, not new scale steps.
+- **Display** (40/800): the welcome headline and the match result.
+- **Headline** (26/800): screen titles — Leaderboard, Friends, Locker.
+- **Hero** (23/800): the lobby's single primary offer.
+- **Title** (18/700): the directive instruction and the tutorial's coaching line.
+- **Body** (14.5): result reasons, empty states, explanatory copy.
+- **Supporting** (12.5): the directive's second line, row descriptions.
+- **Caption** (11.5): the objective ribbon, seat metadata, records.
+- **Eyebrow** (10/700, uppercase, 0.16em): match type, turn badge, step counter, column headings,
+  stat labels. Short strings only — an eyebrow is never a sentence.
 
-Match-type labels, the wordmark, rule eyebrows, and selected cosmetic descriptions use short uppercase strings. Sentence copy stays in sentence case. Numeric ranks, ratings, scores, and clocks should remain tabular-looking and scannable even though the current system font is proportional.
-
-Native text continues to allow system font scaling. Web headings render as semantic HeroUI typography elements; alerts use polite live-region behavior. Do not replace system typography with fixed-pixel text that disables Dynamic Type or Android font scaling.
-
-**The One Scale Rule.** Use `UIText` roles rather than selecting a new font size inside a screen. A one-off color or alignment override is acceptable; a one-off type scale is not.
+**The One Scale Rule.** Use the roles above rather than choosing a new size inside a screen. Weight
+and colour are the tools for emphasis within a role.
 
 ## Layout
 
-The underlying rhythm is four pixels. Most component gaps use `spacing.2` through `spacing.4`; screen groups use `spacing.4` or `spacing.4-5`; desktop padding uses `spacing.6`. Dense rows may use the smaller six- and eight-pixel steps, but unrelated sections need a full 16–18 pixels.
+The rhythm is four pixels; most gaps are 8–16px and screen padding is 16px below 600px, 24px above.
 
-The global header spans the viewport but keeps its contents inside an 1180px rail. Non-match screens form a single centered reading column with a 680px maximum width. They receive 16px padding below 600px and 24px at wider sizes, plus 110px of bottom clearance for the fixed primary tabs. The header and fixed navigation sit on Raised Paper with one-pixel Hairlines.
+**Match layout** is a fixed frame that never scrolls, because scrolling a board somebody is dragging
+on is the worst of both worlds. Below 900px it is the tallest 9:16 box that fits, stacked: header,
+objective ribbon, opponent seat, board, your seat, directive, actions. At 900px and above the match
+frame widens to 1120px and becomes two panes — the board takes the whole height on the left, and a
+360px column on the right holds the seats at the top and the objective, directive and actions as one
+block at the bottom, next to the controls they describe.
 
-Match layout is board-first. Below 900px, the board and match controls stack in a column within a 620px rail. At 900px and above, they become a row within an 1100px rail: the square board flexes up to 600px and the status/action panel stays at or below 390px. The board itself is square, fills available width, and stops at 560px.
+The board is measured, never assumed: the panel beneath it reports its own height and the board
+takes the largest square that fits what is left. A hard-coded footer height is how the board ends up
+drawn over the seat above it.
 
-The app shell uses a safe-area view on every platform. Native content must continue respecting status bar, display cutout, home indicator, navigation bar, and keyboard insets. Android system Back closes rules, closes legal content, requests confirmation before forfeiting an active online match, or returns to Play in that order; it falls through to the operating system from the Play root. iOS navigation must preserve native dismissal and edge-back expectations where navigation stacks are introduced.
+**Other screens** are a single 680px reading column above a fixed icon tab bar, and they may scroll.
+Their content container grows to the viewport so a short screen can push its own footer to the
+bottom rather than stranding it mid-page.
 
-Rows use flex wrapping when labels or translated copy can grow: account actions, social actions, legal links, and friend rows are already designed this way. Do not preserve a desktop row if it causes clipped labels on small screens or at larger text sizes.
-
-**The Board-First Rule.** On every match viewport, the board and current-turn status appear before secondary controls and must never be visually outscaled by navigation or account chrome.
+**The Board-First Rule.** On every match viewport the board and the current directive come before
+secondary controls, and nothing is allowed to outscale the board.
 
 ## Elevation & Depth
 
-Depth is restrained and structural. Paper, Porcelain, and Soft Sage establish most hierarchy through tonal layering and one-pixel borders. Standard cards use HeroUI’s low surface shadow on web/native, with the web wrapper additionally applying its small shadow treatment. Transparent cards remove both border and shadow.
+Depth is almost entirely tonal: panels are lighter greens with one-pixel edges, and there are no
+drop shadows on ordinary cards.
 
-The game board is the one strongly lifted object: a deep green frame, 12px vertical offset, 24px blur, and 16% dark-green shadow, with Android elevation 8. This makes the physical play surface feel primary without turning the rest of the interface into a stack of floating panels. HeroUI owns dialog/overlay elevation and backdrop behavior on each platform.
+The board is the exception and the point. It carries a coloured lift — the acting side's piece
+colour at 45% opacity, 28px blur, 14px down — drawn on an outer view while an inner view clips the
+squares, because `overflow: hidden` and a shadow on the same element cancel out on Android.
 
-**The One Lifted Object Rule.** In a match, reserve pronounced elevation for the board. Status cards and controls use tonal contrast, borders, and the library’s low surface depth.
+**The One Lifted Object Rule.** In a match, only the board is lifted. Everything else earns its
+separation from tone and hairlines.
 
 ## Shapes
 
-The form language is gently rounded and tactile. HeroUI’s eight-pixel base radius expands to platform field radii, 24px card surfaces, and pill-shaped buttons and segmented tabs. Large buttons use the larger pill radius. The game board uses a 20px clipped frame; skin previews use 18px.
+Controls are 14px rounded rectangles at a 48px minimum height; cards are 16px; hero surfaces and the
+board are 20px; chips and pips are fully round. Board geometry is unchanged from the physical game:
+pieces sit 7% inside their square with 19% corners, discs are circles, legal squares are circles.
 
-Board geometry is more expressive but still systematic: placed pieces use 19px corners, ghost cells use 16px corners, legal targets are circles, and neutral pieces are discs. The recurring square, rounded-square, and circle silhouettes make legal state readable without extra decoration.
-
-Borders are functional. Use them to separate paper surfaces, define fields, show an active seat in that player’s color, or preserve board edges. Avoid ornamental divider grids inside content.
+Borders are functional — separating a surface, defining a field, marking an active seat in its own
+colour, or ringing a piece the copy is talking about. There is no ornamental rule anywhere.
 
 ## Components
 
-The application owns a small adaptive wrapper API: `UIProvider`, `UIButton`, `UIText`, `UITextField`, `UICard`, `UIChip`, `UIAvatar`, `UIModal`, and `UITabs`. Screens use these wrappers instead of importing either HeroUI package directly.
+Two families, deliberately.
 
-### Platform implementation
+**HeroUI wrappers** (`components/ui`) — `UIProvider`, `UIButton`, `UIText`, `UITextField`, `UICard`,
+`UIChip`, `UIAvatar`, `UIModal`, `UITabs` — keep the platform's own behaviour for forms, dialogs,
+avatars and the legal pages. Their brand colours are mapped to the dark palette; the wrapper is
+still the contract, and a variant added to one platform needs a real equivalent on the other.
 
-| Concern | Web | iOS / Android |
-| --- | --- | --- |
-| Library | HeroUI React with `@heroui/styles` | HeroUI Native with Uniwind-generated styles |
-| Provider | No extra HeroUI provider in the wrapper | Gesture-handler root, safe-area provider, then HeroUI Native provider |
-| Modal | Centered HeroUI `Modal`, contained scrolling, close trigger when dismissable | HeroUI Native `Dialog` portal/overlay, 88% max height, four-side margin, contained scrolling, close control when dismissable |
-| Tabs | HeroUI `Tabs` with ARIA label and selected key | HeroUI Native `Tabs` with indicator, trigger, and label compounds |
-| Input | DOM input with correct email, URL, password, autocomplete, disabled, ARIA, and test attributes | Native input with keyboard type, secure entry, autocomplete, disabled state, accessibility label, and test ID |
-| Avatar | DOM image with alternate text and initials fallback | Native remote image with accessibility label and initials fallback |
-| Interaction | Hover, focus-visible ring, pressed scaling, pointer and keyboard behavior from HeroUI | Press feedback, gestures, platform accessibility, and sizing from HeroUI Native |
+**Match chrome** (`components/chrome.tsx`) — `Action`, `IconButton`, `Icon`, `Eyebrow`, `Mono`,
+`Panel`, `Pips`, `Dot`, `Tag` — covers the shapes HeroUI has no equivalent for. Icons are inline
+stroke SVG on a 24px grid; there are no emoji anywhere in the product.
 
-The wrapper is the contract. A variant added to one platform must have a meaningfully equivalent implementation on the other, even when visual metrics or motion differ.
+### The directive
 
-### Buttons
+One panel, produced by the controller for every match state, carrying: a colour-coded badge naming
+who is on the move, a step counter ("Step 1 of 2", "Step 2 of 2 · optional"), the instruction in
+18px, one supporting sentence, four progress pips, and — only while a turn has not been started — a
+"Show me a move" affordance that outlines one legal L.
 
-- **Primary:** solid Table Sage with a light label; used for the next decisive action.
-- **Secondary:** Soft Sage with dark ink; used for an alternate game mode or secondary commitment.
-- **Outline:** clear surface, Sage Outline border, dark-sage label; used for equivalent choices such as Casual and Ranked.
-- **Ghost:** transparent until interaction; used for navigation, cancellation, rules, and low-priority utilities.
-- **Danger:** solid destructive red; reserved for irreversible or harmful actions, not ordinary “Leave” navigation.
-- **Sizes:** web follows HeroUI’s compact responsive heights; native enforces a 48dp minimum height at every size and retains HeroUI’s larger treatment for large controls. All standalone native targets satisfy at least 44pt on iOS and 48dp on Android.
-- **States:** web uses the darker or softer brand hover tokens and HeroUI’s focus-visible ring/pressed scale. Disabled controls retain their label but use HeroUI’s reduced opacity and reject input. Honor reduced-motion settings.
+No screen composes this text itself. That is what stops a turn, a connection problem and a clock all
+trying to speak through the same line at once.
 
-### Cards / Containers
+### The action bar
 
-Cards are warm, rounded grouping surfaces with 16px internal padding. Default cards are Porcelain with a warm Hairline; secondary cards use Soft Sage with a sage border; transparent cards remove surface, border, and shadow. Use secondary cards for current rank, current player, connection detail, instructions, initialization, and empty states—not as generic decoration.
+Three slots, in the same places, every turn:
 
-### Inputs / Fields
+1. **Undo** (icon) — takes back the last thing you did, whatever that was: the last square while
+   tracing, the disc while placing it, the whole L once the disc is home.
+2. **Secondary** — "Clear" while tracing, "Redraw L" once placed.
+3. **Primary** — the commit. When it cannot be pressed it says why: "Place your L first",
+   "Their turn".
 
-Fields use a Porcelain background, Charcoal Ink, muted placeholder text, and a warm neutral border. They are full-width inside their field group and always have a visible text label or explicit accessibility label. Web preserves semantic type and autocomplete attributes; native preserves keyboard type, secure entry, and platform autocomplete. HeroUI owns focus, invalid, and disabled mechanics.
-
-### Chips and status
-
-Chips are compact, rounded state labels rather than action buttons. Default is neutral; success means online/connected; warning means queueing/waiting/reconnecting; danger means disconnected or failed. A chip’s text must name the state. Connection problems also receive a secondary card with title, detail, and countdown/time when available.
-
-Transient auth, friends, leaderboard, locker, and general game messages are supporting text with alert semantics. Use a modal only for a focused rules task or a match result that requires an explicit next action.
+**The Standing Controls Rule.** A control the player has learned never disappears; it greys out, and
+the reason is written on it or directly above it.
 
 ### Navigation
 
-The four top-level destinations are Play, Leaders, Friends, and Locker. They live in a fixed bottom segmented tab surface when no match or legal page is active. The active tab uses the HeroUI indicator; the control stays within the same 680px content rail as screens. In-match navigation becomes two quiet actions—Leave and Rules—around a centered match label and connection chip.
+Four destinations — Play, Leaders, Friends, Locker — in a fixed bottom bar with an icon and a word
+each. A bare icon row is a memory test and a bare word row is hard to hit, so neither is dropped.
+In a match the navigation becomes two icon controls, Leave and Rules, around the match type, turn
+number, and connection state.
 
-### Avatars
+Android system Back closes rules, closes legal content, leaves the tutorial, confirms before
+forfeiting a live online match, or returns to Play, in that order.
 
-DiceBear avatars are circular identity aids with uppercase initials as the fallback. They do not replace the visible player name. Active seat avatars may receive the player’s side color as their background, while the seat border and text still carry active/role information.
+### The board
 
-### Game board
+One React Native SVG board on every platform. Sixteen transparent `Pressable` regions sit above the
+drawing, one per square, keeping touch, pointer, keyboard, test and screen-reader interaction
+independent of how the board is painted. A drag handler on the frame claims the gesture only once
+the pointer actually travels, so dragging never costs the board its keyboard behaviour.
 
-The same React Native SVG board renders on web, iOS, and Android. It uses a 400-unit view box split into sixteen 100-unit cells. Alternating skin colors and two-unit outlines create the grid.
+Every square exposes a coordinate (`A1`–`D4`) and its state. Traced squares carry their position in
+the trace as a drawn numeral, which is what makes "tap a numbered square to step back to it" a
+visible offer rather than a hidden one.
 
-- Placed L pieces sit eight units inside each cell, with a translucent white edge.
-- The pending L is a 66-unit rounded ghost at 20% opacity with a dashed player-color stroke.
-- Legal targets are centered 15-unit circles in the board outline at 62% opacity.
-- Cells drawn during the current move gain increasing opacity and a stronger white edge.
-- Neutral discs are 24-unit circles; selection grows them to 28 units and changes the ring from board outline to the acting player color.
-- Sixteen transparent `Pressable` regions sit above the SVG, one per 25% cell. They keep touch, pointer, keyboard, test, and screen-reader interaction independent from drawing.
-- Each cell exposes a coordinate (`A1`–`D4`), occupancy or legal-target description, disabled state, and a build-move hint when actionable. Drawn L squares, the selected neutral disc, and its pending destination expose selected state and explicit progress descriptions; legal targets are described without being misreported as selected.
+### First run
 
-The board accepts input only while the player can act and the result modal is closed. An L is drawn by dragging through four highlighted squares, or by tapping them one at a time; the fourth square places the shape, so there is no separate submit step. A neutral disc is then dragged to a highlighted empty square, or left alone. Clear, Redraw L, and End turn sit directly beneath the board and reflect legal availability through disabled state.
+A new player gets a welcome screen that says what the game is, then a five-step tutorial where two
+of the steps are the real board wired to the real rules engine. Only legal squares are lit, so a
+beginner cannot make an illegal move — not because it is rejected, but because there is nothing
+illegal to tap. The coaching sits under the board, in the same place the match screen puts its
+directive, so the lesson teaches where to look as well as what to do.
 
-### Rules and results
+The tutorial's closing position is asserted in `rules.test.ts` against the real move generator. A
+lesson that claims a win must be showing one.
 
-Rules use a five-slide modal with a Soft Sage teaching card, short uppercase eyebrow, display title, body instruction, and progress marks. The active mark stretches from a dot to a capsule and uses Table Sage. Match results use a non-dismissable modal with one large replay/rematch action and one ghost return action, ensuring every completed match has a safe exit.
+### Results
+
+A screen, not a dialog. It names how the match ended in a sentence written about whoever lost it,
+shows the finishing position with the trapped piece ringed in paper white, and reports the turn count
+and — once the server's new rating has actually replicated — the rating change. A delta is never
+guessed: if the new rating has not arrived, the line is left out.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** keep the board, current turn, active clock, and next legal action as the match hierarchy.
-- **Do** use the shared UI wrappers so HeroUI React and HeroUI Native remain behaviorally aligned.
-- **Do** pair every player color and connection color with a name, label, geometry change, or accessible state.
-- **Do** retain safe areas, Android Back behavior, scalable native text, reduced-motion handling, keyboard navigation, and visible web focus.
-- **Do** keep touch targets at least 44pt on iOS and 48dp on Android; enlarge the hit area when a visually small control is necessary.
-- **Do** preserve cell-level board labels and one independent interactive target for each of the sixteen squares.
-- **Do** wrap dense action rows and test them at narrow widths and increased text sizes.
+- **Do** keep the board the brightest and largest object in any match viewport.
+- **Do** put every match state through the controller's directive, so one state cannot produce two
+  competing messages.
+- **Do** keep all three action slots rendered, and say why a disabled one is disabled.
+- **Do** pair every colour with a name, label, geometry change, or accessible state.
+- **Do** measure the board against the space its controls actually took.
+- **Do** keep touch targets at 48px and up, and retain safe areas, Android Back, native text
+  scaling, reduced-motion handling and visible web focus.
+- **Do** state a requirement on the row it applies to — "Claim a name" on the ranked row — rather
+  than disabling a control silently.
 
 ### Don't:
 
-- **Don't** import HeroUI React into shared/native screens or HeroUI Native into web-specific wrappers.
-- **Don't** recolor a player skin without retaining a named warm/cool distinction and adequate contrast against every supported board skin.
-- **Don't** hide queueing, reconnecting, disconnected, clock pressure, or server-authoritative results behind color or animation alone.
-- **Don't** add ornamental gradients, glass effects, heavy shadows, or extra accent colors to routine cards and settings.
-- **Don't** invent custom native navigation, back gestures, dialogs, switches, or web-shaped controls when the platform or HeroUI already supplies the convention.
-- **Don't** place fixed bottom navigation over scroll content; retain the shell’s bottom clearance and safe-area padding.
-- **Don't** disable focus, font scaling, screen-reader labels, or reduced-motion behavior to preserve a fixed composition.
+- **Don't** darken the board palette to match the interface; the contrast is the whole idea.
+- **Don't** add a second accent colour, or use mint for anything that is not the single primary.
+- **Don't** put two dashed rings of the same size and weight on the board at the same time.
+- **Don't** ring a piece in its own colour — use the paper-white outline.
+- **Don't** hide queueing, reconnecting, disconnection, clock pressure or a server result behind
+  colour or animation alone.
+- **Don't** import HeroUI React into shared or native screens, or HeroUI Native into web wrappers.
+- **Don't** put a control in the match chrome that only appears sometimes.
+- **Don't** invent numbers the server does not produce — no rating deltas, percentiles or histories
+  that are not computed from replicated state.

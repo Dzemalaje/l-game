@@ -1,6 +1,13 @@
 export type Tab = "play" | "leaders" | "friends" | "locker";
 export type Mode = "cpu" | "local" | "online";
 export type Phase = "l" | "neutral" | "gameover";
+/**
+ * The first-run path, shown before the app proper.
+ *
+ * "welcome" says what the game is; "tutorial" makes you play a turn of it. Both are skippable, and
+ * once either is finished the stage is `undefined` for good.
+ */
+export type IntroStage = "welcome" | "tutorial";
 export type ConnectionState = "idle" | "queueing" | "waiting" | "reconnecting" | "connected" | "disconnected";
 export type LockerCategory = "pieces" | "boards" | "avatars";
 export type LeaderboardScope = "global" | "friends";
@@ -16,6 +23,8 @@ export const STORAGE = {
   server: "lgame.server",
   /** The SpacetimeDB identity token. Reusing it is what makes an account survive a restart. */
   token: "lgame.authToken",
+  /** Set once the welcome screen or the tutorial has been finished or skipped. */
+  intro: "lgame.introSeen",
 } as const;
 export const LEGAL_OPERATOR = process.env.EXPO_PUBLIC_LEGAL_OPERATOR ?? "The L Game operator";
 export const LEGAL_CONTACT = process.env.EXPO_PUBLIC_LEGAL_CONTACT

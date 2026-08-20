@@ -1,8 +1,9 @@
 import React, { useCallback, useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import type { GestureResponderEvent, LayoutChangeEvent } from "react-native";
-import Svg, { Circle, Rect } from "react-native-svg";
-import { BOARD_SKINS, PIECE_SKINS, css } from "../skins";
+import Svg, { Circle, Rect, Text as SvgText } from "react-native-svg";
+import { BOARD_SKINS, PIECE_SKINS, css, cssAlpha } from "../skins";
+import { COLOR, FONT, RADIUS, boardGlow } from "../theme";
 import { sameCell } from "../shared/rules";
 import type { Cell } from "../shared/types";
 import type { BoardFrame } from "../game/types";
@@ -24,13 +25,19 @@ interface GameBoardProps {
 
 const BOARD_UNITS = 400;
 const CELL_UNITS = 100;
-const INSET = 8;
+/** How far a placed piece sits inside its square, in board units. */
+const INSET = 7;
 
 const hasCell = (cells: readonly Cell[], cell: Cell) => cells.some((entry) => sameCell(entry, cell));
 const key = (cells: readonly Cell[]) => cells.map((cell) => cell.join("")).join("-");
+const centre = (value: number) => value * CELL_UNITS + CELL_UNITS / 2;
 
 /**
  * The game board is React Native SVG on every platform.
+ *
+ * The interface around it is a dark room; this is the only lit object in it, which is why the frame
+ * carries a coloured lift rather than a neutral shadow — the glow is tinted with whichever side is
+ * on the move, so whose turn it is reads from the board itself before any text is consulted.
  *
  * Three input paths share it and must not fight. Transparent Pressables over the sixteen squares
  * keep keyboard and screen-reader use working exactly as before; a drag handler on the frame takes
@@ -42,6 +49,7 @@ export function GameBoard({ frame, enabled, phase, onCellPress, onDrawTo, onPick
   const pieces = PIECE_SKINS[frame.pieceSkin];
   const allCells: Cell[] = Array.from({ length: 16 }, (_, index) => [index % 4, Math.floor(index / 4)] as Cell);
   const reduced = useReducedMotion();
+  const moverColor = css(pieces.colors[frame.mover]);
 
   const { ref: boardRef, reject: rejectMotion } = useBoardMotion({
     targets: key(frame.targets),
@@ -152,194 +160,258 @@ export function GameBoard({ frame, enabled, phase, onCellPress, onDrawTo, onPick
     if (neutral >= 0) {
       return `${coordinate}, ${neutral === frame.selectedNeutral ? "selected " : ""}neutral disc ${neutral + 1}`;
     }
+    if (hasCell(frame.hint, cell)) return `${coordinate}, part of the suggested L`;
+    if (hasCell(frame.outlined, cell)) return `${coordinate}, part of the highlighted L`;
     return `${coordinate}, empty square`;
   };
 
   return (
-    <View
-      ref={frameRef}
-      style={styles.frame}
-      onLayout={(_event: LayoutChangeEvent) => measure()}
-      accessibilityRole="summary"
-      accessibilityLabel="Four by four L Game board"
-      testID="game-board"
-      // A tap belongs to the Pressable underneath; the frame only claims the gesture once the
-      // pointer actually travels, so dragging never costs the board its keyboard behaviour.
-      onStartShouldSetResponderCapture={() => false}
-      onMoveShouldSetResponderCapture={() => enabled}
-      onResponderGrant={(event) => { measure(); handleGrant(event); }}
-      onResponderMove={handleMove}
-      onResponderRelease={handleRelease}
-      onResponderTerminate={() => { gesture.current = { moved: false }; }}
-      onResponderTerminationRequest={() => false}
-    >
-      <View ref={boardRef} style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Svg width="100%" height="100%" viewBox={`0 0 ${BOARD_UNITS} ${BOARD_UNITS}`}>
-          {allCells.map(([x, y]) => (
-            <Rect
-              key={`square-${x}-${y}`}
-              x={x * CELL_UNITS}
-              y={y * CELL_UNITS}
-              width={CELL_UNITS}
-              height={CELL_UNITS}
-              fill={css((x + y) % 2 ? board.dark : board.light)}
-              stroke={css(board.outline)}
-              strokeWidth={2}
-            />
-          ))}
-
-          {frame.ghost?.cells.map(([x, y]) => (
-            <Circle
-              key={`ghost-${x}-${y}`}
-              data-lg="ghost"
-              cx={x * CELL_UNITS + 50}
-              cy={y * CELL_UNITS + 50}
-              r={30}
-              // An outline rather than a filled dot: these squares are usually legal targets too,
-              // and two filled circles in one square blended into a muddy third colour that read
-              // as neither.
-              fill="none"
-              stroke={css(pieces.colors[frame.ghost!.player])}
-              strokeWidth={5}
-              opacity={0.45}
-            />
-          ))}
-
-          {frame.targets.map(([x, y]) => (
-            <Circle
-              key={`target-${x}-${y}`}
-              data-lg="target"
-              cx={x * CELL_UNITS + 50}
-              cy={y * CELL_UNITS + 50}
-              r={15}
-              fill={css(board.outline)}
-              opacity={0.62}
-            />
-          ))}
-
-          {frame.pieces.flatMap((cells, player) => cells
-            .filter((cell) => !(frame.ghost?.lifted && player === frame.ghost.player && hasCell(frame.ghost.cells, cell)))
-            .map(([x, y]) => (
+    <View ref={frameRef} style={[styles.frame, boardGlow(moverColor)]}>
+      <View
+        style={styles.inner}
+        onLayout={(_event: LayoutChangeEvent) => measure()}
+        accessibilityRole="summary"
+        accessibilityLabel="Four by four L Game board"
+        testID="game-board"
+        // A tap belongs to the Pressable underneath; the frame only claims the gesture once the
+        // pointer actually travels, so dragging never costs the board its keyboard behaviour.
+        onStartShouldSetResponderCapture={() => false}
+        onMoveShouldSetResponderCapture={() => enabled}
+        onResponderGrant={(event) => { measure(); handleGrant(event); }}
+        onResponderMove={handleMove}
+        onResponderRelease={handleRelease}
+        onResponderTerminate={() => { gesture.current = { moved: false }; }}
+        onResponderTerminationRequest={() => false}
+      >
+        <View ref={boardRef} style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Svg width="100%" height="100%" viewBox={`0 0 ${BOARD_UNITS} ${BOARD_UNITS}`}>
+            {allCells.map(([x, y]) => (
               <Rect
-                key={`piece-${player}-${x}-${y}`}
-                data-lg="piece"
-                data-cell={`${player}-${x}-${y}`}
-                x={x * CELL_UNITS + INSET}
-                y={y * CELL_UNITS + INSET}
-                width={CELL_UNITS - INSET * 2}
-                height={CELL_UNITS - INSET * 2}
-                rx={19}
-                fill={css(pieces.colors[player as 0 | 1])}
-                stroke="#fff9"
-                strokeWidth={3}
+                key={`square-${x}-${y}`}
+                x={x * CELL_UNITS}
+                y={y * CELL_UNITS}
+                width={CELL_UNITS}
+                height={CELL_UNITS}
+                fill={css((x + y) % 2 ? board.dark : board.light)}
+                stroke={css(board.outline)}
+                strokeWidth={2}
               />
-            )))}
+            ))}
 
-          {frame.drawn.map(([x, y], index) => (
-            <Rect
-              key={`drawn-${x}-${y}`}
-              data-lg="drawn"
-              x={x * CELL_UNITS + INSET}
-              y={y * CELL_UNITS + INSET}
-              width={CELL_UNITS - INSET * 2}
-              height={CELL_UNITS - INSET * 2}
-              rx={19}
-              fill={css(pieces.colors[frame.ghost?.player ?? 0])}
-              opacity={0.72 + index * 0.07}
-              stroke="#fff"
-              strokeWidth={4}
-            />
-          ))}
+            {frame.ghost?.cells.map(([x, y]) => (
+              <Circle
+                key={`ghost-${x}-${y}`}
+                data-lg="ghost"
+                cx={centre(x)}
+                cy={centre(y)}
+                // Deliberately smaller and finer than the disc halo below, which is also a dashed
+                // ring in the same colour and is on screen at the same time during the disc step.
+                // Size and dash weight are what tell "your L was here" from "this disc can move".
+                r={30}
+                fill="none"
+                stroke={css(pieces.colors[frame.ghost!.player])}
+                strokeWidth={3.5}
+                strokeDasharray="5 7"
+                opacity={0.4}
+              />
+            ))}
 
-          {frame.neutrals.map(([x, y], index) => {
-            const selected = frame.selectedNeutral === index;
-            const moved = selected && frame.pendingDestination;
-            const at = moved ? frame.pendingDestination! : [x, y] as Cell;
-            const mover = css(pieces.colors[frame.ghost?.player ?? 0]);
-            return (
-              <React.Fragment key={`neutral-${index}`}>
-                {/* Nothing on the board used to say when the discs became live, so the second half
-                    of a turn was easy to miss entirely. This halo appears exactly then. */}
-                {frame.discsMovable && !selected ? (
-                  <Circle
-                    data-lg="disc-ready"
-                    cx={at[0] * CELL_UNITS + 50}
-                    cy={at[1] * CELL_UNITS + 50}
-                    r={33}
-                    fill="none"
-                    stroke={mover}
-                    strokeWidth={3}
-                    strokeDasharray="7 6"
-                    opacity={0.75}
-                  />
-                ) : null}
+            {/* Points at a piece rather than at a move, so it is drawn in paper white: the same
+                ring in the piece's own colour would be invisible on top of it. */}
+            {frame.outlined.map(([x, y]) => (
+              <Rect
+                key={`outlined-${x}-${y}`}
+                x={x * CELL_UNITS + 3}
+                y={y * CELL_UNITS + 3}
+                width={CELL_UNITS - 6}
+                height={CELL_UNITS - 6}
+                rx={23}
+                fill="none"
+                stroke={COLOR.text}
+                strokeWidth={6}
+                opacity={0.92}
+              />
+            ))}
+
+            {/* The suggested L, for a player who cannot yet see that a move exists at all. */}
+            {frame.hint.map(([x, y]) => (
+              <Circle
+                key={`hint-${x}-${y}`}
+                data-lg="hint"
+                cx={centre(x)}
+                cy={centre(y)}
+                r={32}
+                fill="none"
+                stroke={moverColor}
+                strokeWidth={6}
+                strokeDasharray="12 9"
+                opacity={0.9}
+              />
+            ))}
+
+            {/* Legal squares are the loudest thing on the board while a turn is being built: on a
+                board this small, "I cannot see a move" is the whole difficulty of a first game. */}
+            {frame.targets.map(([x, y]) => (
+              <React.Fragment key={`target-${x}-${y}`}>
                 <Circle
-                  data-lg="disc"
-                  data-held={selected ? "true" : "false"}
-                  cx={at[0] * CELL_UNITS + 50}
-                  cy={at[1] * CELL_UNITS + 50}
-                  r={selected ? 28 : 24}
-                  fill="#f8f5ec"
-                  stroke={selected ? mover : css(board.outline)}
-                  strokeWidth={selected ? 8 : 5}
+                  data-lg="target"
+                  cx={centre(x)}
+                  cy={centre(y)}
+                  r={22}
+                  fill={cssAlpha(pieces.colors[frame.mover], 0.22)}
+                />
+                <Circle
+                  data-lg="target"
+                  cx={centre(x)}
+                  cy={centre(y)}
+                  r={frame.discsMovable ? 12 : 15}
+                  fill={moverColor}
+                  opacity={frame.discsMovable ? 0.7 : 1}
                 />
               </React.Fragment>
+            ))}
+
+            {frame.pieces.flatMap((cells, player) => cells
+              .filter((cell) => !(frame.ghost?.lifted && player === frame.ghost.player && hasCell(frame.ghost.cells, cell)))
+              .map(([x, y]) => (
+                <Rect
+                  key={`piece-${player}-${x}-${y}`}
+                  data-lg="piece"
+                  data-cell={`${player}-${x}-${y}`}
+                  x={x * CELL_UNITS + INSET}
+                  y={y * CELL_UNITS + INSET}
+                  width={CELL_UNITS - INSET * 2}
+                  height={CELL_UNITS - INSET * 2}
+                  rx={19}
+                  fill={css(pieces.colors[player as 0 | 1])}
+                  stroke="#fff9"
+                  strokeWidth={3}
+                />
+              )))}
+
+            {/* Each drawn square carries its position in the trace, which is what makes "tap a
+                numbered square to step back to it" a visible offer rather than a hidden one. */}
+            {frame.drawn.map(([x, y], index) => (
+              <React.Fragment key={`drawn-${x}-${y}`}>
+                <Rect
+                  data-lg="drawn"
+                  x={x * CELL_UNITS + INSET}
+                  y={y * CELL_UNITS + INSET}
+                  width={CELL_UNITS - INSET * 2}
+                  height={CELL_UNITS - INSET * 2}
+                  rx={19}
+                  fill={moverColor}
+                  stroke="#ffffffec"
+                  strokeWidth={5}
+                />
+                <SvgText
+                  x={centre(x)}
+                  y={centre(y) + 7}
+                  fill="#ffffffed"
+                  fontSize={20}
+                  fontWeight="700"
+                  fontFamily={FONT.mono}
+                  textAnchor="middle"
+                >
+                  {index + 1}
+                </SvgText>
+              </React.Fragment>
+            ))}
+
+            {frame.neutrals.map(([x, y], index) => {
+              const selected = frame.selectedNeutral === index;
+              const moved = selected && frame.pendingDestination;
+              const at = moved ? frame.pendingDestination! : [x, y] as Cell;
+              return (
+                <React.Fragment key={`neutral-${index}`}>
+                  {/* Nothing on the board used to say when the discs became live, so the second half
+                      of a turn was easy to miss entirely. This halo appears exactly then. */}
+                  {frame.discsMovable && !selected ? (
+                    <Circle
+                      data-lg="disc-ready"
+                      cx={centre(at[0])}
+                      cy={centre(at[1])}
+                      r={38}
+                      fill="none"
+                      stroke={moverColor}
+                      strokeWidth={4}
+                      strokeDasharray="8 7"
+                      opacity={0.8}
+                    />
+                  ) : null}
+                  <Circle
+                    data-lg="disc"
+                    data-held={selected ? "true" : "false"}
+                    cx={centre(at[0])}
+                    cy={centre(at[1])}
+                    r={selected ? 30 : 26}
+                    fill={COLOR.disc}
+                    stroke={selected ? moverColor : css(board.outline)}
+                    strokeWidth={selected ? 8 : 5}
+                  />
+                </React.Fragment>
+              );
+            })}
+          </Svg>
+        </View>
+
+        <View style={StyleSheet.absoluteFill} pointerEvents={enabled ? "auto" : "none"}>
+          {allCells.map((cell) => {
+            const target = hasCell(frame.targets, cell);
+            const drawn = hasCell(frame.drawn, cell);
+            const pendingDestination = Boolean(frame.pendingDestination && sameCell(frame.pendingDestination, cell));
+            const neutralIndex = frame.neutrals.findIndex((entry, index) => {
+              if (index === frame.selectedNeutral && frame.pendingDestination) return false;
+              return sameCell(entry, cell);
+            });
+            const neutral = neutralIndex >= 0;
+            const selectedNeutral = neutralIndex >= 0 && neutralIndex === frame.selectedNeutral;
+            return (
+              <Pressable
+                key={`input-${cell[0]}-${cell[1]}`}
+                onPress={() => handleCellPress(cell)}
+                disabled={!enabled}
+                focusable={enabled}
+                accessibilityRole="button"
+                accessibilityLabel={cellLabel(cell)}
+                accessibilityHint={target || neutral ? "Activate to build the current move" : undefined}
+                accessibilityState={{ disabled: !enabled, selected: drawn || pendingDestination || selectedNeutral }}
+                style={{
+                  position: "absolute",
+                  left: `${cell[0] * 25}%`,
+                  top: `${cell[1] * 25}%`,
+                  width: "25%",
+                  height: "25%",
+                }}
+                testID={`board-cell-${cell[0]}-${cell[1]}`}
+              />
             );
           })}
-        </Svg>
-      </View>
-
-      <View style={StyleSheet.absoluteFill} pointerEvents={enabled ? "auto" : "none"}>
-        {allCells.map((cell) => {
-          const target = hasCell(frame.targets, cell);
-          const drawn = hasCell(frame.drawn, cell);
-          const pendingDestination = Boolean(frame.pendingDestination && sameCell(frame.pendingDestination, cell));
-          const neutralIndex = frame.neutrals.findIndex((entry, index) => {
-            if (index === frame.selectedNeutral && frame.pendingDestination) return false;
-            return sameCell(entry, cell);
-          });
-          const neutral = neutralIndex >= 0;
-          const selectedNeutral = neutralIndex >= 0 && neutralIndex === frame.selectedNeutral;
-          return (
-            <Pressable
-              key={`input-${cell[0]}-${cell[1]}`}
-              onPress={() => handleCellPress(cell)}
-              disabled={!enabled}
-              focusable={enabled}
-              accessibilityRole="button"
-              accessibilityLabel={cellLabel(cell)}
-              accessibilityHint={target || neutral ? "Activate to build the current move" : undefined}
-              accessibilityState={{ disabled: !enabled, selected: drawn || pendingDestination || selectedNeutral }}
-              style={{
-                position: "absolute",
-                left: `${cell[0] * 25}%`,
-                top: `${cell[1] * 25}%`,
-                width: "25%",
-                height: "25%",
-              }}
-              testID={`board-cell-${cell[0]}-${cell[1]}`}
-            />
-          );
-        })}
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  /**
+   * Two views rather than one: the outer carries the coloured lift, the inner clips the squares.
+   * `overflow: hidden` and a shadow on the same element cancel each other out on Android.
+   */
   frame: {
     width: "100%",
     aspectRatio: 1,
     alignSelf: "center",
-    borderRadius: 20,
+    borderRadius: RADIUS.board,
+    padding: 5,
+    backgroundColor: COLOR.boardFrame,
+    borderWidth: 1,
+    borderColor: COLOR.boardFrameEdge,
+  },
+  inner: {
+    flex: 1,
+    borderRadius: RADIUS.board - 6,
     overflow: "hidden",
-    borderWidth: 3,
-    borderColor: "#435c49",
-    backgroundColor: "#e8dfc9",
-    shadowColor: "#17231c",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.16,
-    shadowRadius: 24,
-    elevation: 8,
+    backgroundColor: COLOR.boardFrame,
   },
 });

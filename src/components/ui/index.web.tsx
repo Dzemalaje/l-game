@@ -16,11 +16,11 @@ export function UIProvider({ children }: UIProviderProps) { return children; }
 export function UIButton({ children, onPress, disabled, variant = "primary", size = "md", fullWidth, ...props }: UIButtonProps) {
   const webVariant = variant === "danger" ? "danger" : variant;
   const brandClass = {
-    primary: "bg-[#556b59] text-white hover:bg-[#435648]",
-    secondary: "bg-[#dfe7dc] text-[#263129] hover:bg-[#d2ddcf]",
-    outline: "border-[#6c7c6e] text-[#334238] hover:bg-[#e8eee5]",
-    ghost: "text-[#435648] hover:bg-[#e8eee5]",
-    danger: "bg-[#a43f38] text-white hover:bg-[#8d342f]",
+    primary: "bg-[#7fd6a6] text-[#08150e] font-semibold hover:bg-[#6ac492]",
+    secondary: "bg-[#1f2d27] text-[#f2efe4] hover:bg-[#2c3b34]",
+    outline: "border-[#33443e] text-[#9fb0a6] hover:bg-[#16211c]",
+    ghost: "text-[#9fb0a6] hover:bg-[#16211c] hover:text-[#f2efe4]",
+    danger: "bg-[#e5695c] text-[#2a0d0a] font-semibold hover:bg-[#c9564a]",
   }[variant];
   return (
     <Button
@@ -47,7 +47,7 @@ export function UIText({ muted, ...props }: UITextProps) {
       weight={props.weight}
       align={props.align}
       className={props.className}
-      style={{ color: muted ? "#626a65" : "#252b29", ...(props.style as React.CSSProperties) }}
+      style={{ color: muted ? "#8b9d93" : "#f2efe4", ...(props.style as React.CSSProperties) }}
       aria-live={props.accessibilityRole === "alert" ? "polite" : undefined}
     >
       {props.children}
@@ -66,7 +66,7 @@ export function UITextField({ secureTextEntry, keyboardType, autoComplete, disab
       autoComplete={autoComplete === "off" ? "off" : autoComplete}
       disabled={disabled}
       aria-label={props.accessibilityLabel}
-      className={`border-[#b9b2a3] bg-[#fffdf7] text-[#252b29] placeholder:text-[#7b817d] ${props.className ?? ""}`}
+      className={`border-[#2c3b34] bg-[#101a15] text-[#f2efe4] placeholder:text-[#5d6f66] ${props.className ?? ""}`}
       data-testid={props.testID}
       fullWidth
     />
@@ -75,14 +75,14 @@ export function UITextField({ secureTextEntry, keyboardType, autoComplete, disab
 
 export function UICard({ children, variant = "default", ...props }: UICardProps) {
   const webVariant = variant === "transparent" ? "transparent" : variant;
-  const brandClass = variant === "secondary" ? "border-[#c7d3c4] bg-[#e8eee5] text-[#252b29]"
-    : variant === "transparent" ? "border-transparent bg-transparent text-[#252b29] shadow-none"
-      : "border-[#d8d1c2] bg-[#fffdf7] text-[#252b29]";
+  const brandClass = variant === "secondary" ? "border-[#33443e] bg-[#1f2d27] text-[#f2efe4]"
+    : variant === "transparent" ? "border-transparent bg-transparent text-[#f2efe4] shadow-none"
+      : "border-[#22302a] bg-[#16211c] text-[#f2efe4]";
   return <Card variant={webVariant} className={`border shadow-sm ${brandClass} ${props.className ?? ""}`} style={props.style as React.CSSProperties}><Card.Content>{children}</Card.Content></Card>;
 }
 
 export function UIChip({ children, color = "default", className }: UIChipProps) {
-  const brandClass = color === "success" ? "bg-[#dcebdd] text-[#2d6038]" : color === "warning" ? "bg-[#f3e5bd] text-[#725619]" : color === "danger" ? "bg-[#f2d7d4] text-[#8d342f]" : "bg-[#e5e1d7] text-[#3f4742]";
+  const brandClass = color === "success" ? "bg-[#7fd6a629] text-[#7fd6a6]" : color === "warning" ? "bg-[#e8b56229] text-[#e8b562]" : color === "danger" ? "bg-[#e5695c29] text-[#e5695c]" : "bg-[#22302a] text-[#9fb0a6]";
   return <Chip color={color} className={`${brandClass} ${className ?? ""}`}>{children}</Chip>;
 }
 

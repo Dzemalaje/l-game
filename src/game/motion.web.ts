@@ -38,7 +38,7 @@ export function useBoardMotion(signature: BoardMotionSignature): MotionHandle {
     if (first) return;
     const nodes = scope.current.querySelectorAll(selector("target"));
     if (!nodes.length) return;
-    animate(nodes, { opacity: [0, 0.62], scale: [0.3, 1] }, { duration: 0.24, delay: stagger(0.018) });
+    animate(nodes, { opacity: [0, 1], scale: [0.3, 1] }, { duration: 0.24, delay: stagger(0.018) });
   }, [animate, reduced, scope, targets]);
 
   useEffect(() => {

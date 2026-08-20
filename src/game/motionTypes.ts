@@ -7,7 +7,7 @@
 import type { Ref } from "react";
 
 /** The `data-lg` tags carried by the board's SVG shapes, which Motion selects on. */
-export type MotionKind = "target" | "drawn" | "piece" | "disc" | "disc-ready" | "ghost";
+export type MotionKind = "target" | "drawn" | "piece" | "disc" | "disc-ready" | "ghost" | "hint";
 
 export interface MotionHandle {
   /** Attach to the element that contains the animated shapes. */

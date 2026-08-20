@@ -66,11 +66,11 @@ function ThemeCheck() {
 
 export function UIButton({ children, onPress, disabled, variant = "primary", size = "md", fullWidth, ...props }: UIButtonProps) {
   const brandClass = {
-    primary: "bg-[#556b59]",
-    secondary: "bg-[#dfe7dc]",
-    outline: "border-[#6c7c6e]",
+    primary: "bg-[#7fd6a6]",
+    secondary: "bg-[#1f2d27]",
+    outline: "border-[#33443e]",
     ghost: "bg-transparent",
-    danger: "bg-[#a43f38]",
+    danger: "bg-[#e5695c]",
   }[variant];
   return (
     <Button
@@ -96,7 +96,7 @@ export function UIText({ muted, ...props }: UITextProps) {
       weight={props.weight}
       align={props.align}
       className={props.className}
-      style={[{ color: muted ? "#626a65" : "#252b29" }, props.style]}
+      style={[{ color: muted ? "#8b9d93" : "#f2efe4" }, props.style]}
       numberOfLines={props.numberOfLines}
       accessibilityRole={props.accessibilityRole}
     >
@@ -117,14 +117,14 @@ export function UITextField({ secureTextEntry, keyboardType, autoComplete, disab
       autoComplete={autoComplete}
       isDisabled={disabled}
       accessibilityLabel={props.accessibilityLabel}
-      className={`border-[#b9b2a3] bg-[#fffdf7] text-[#252b29] ${props.className ?? ""}`}
+      className={`border-[#2c3b34] bg-[#101a15] text-[#f2efe4] ${props.className ?? ""}`}
       testID={props.testID}
     />
   );
 }
 
 export function UICard({ children, variant = "default", ...props }: UICardProps) {
-  const brandClass = variant === "secondary" ? "border border-[#c7d3c4] bg-[#e8eee5]" : variant === "transparent" ? "bg-transparent" : "border border-[#d8d1c2] bg-[#fffdf7]";
+  const brandClass = variant === "secondary" ? "border border-[#33443e] bg-[#1f2d27]" : variant === "transparent" ? "bg-transparent" : "border border-[#22302a] bg-[#16211c]";
   return <Card variant={variant} className={`${brandClass} ${props.className ?? ""}`} style={props.style}><Card.Body>{children}</Card.Body></Card>;
 }
 

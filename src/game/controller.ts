@@ -7,6 +7,7 @@ import {
   initialState,
   isLegalNeutralDestination,
   legalContinuations,
+  legalLPlacements,
   parseState,
   pathsForPlacement,
   placementForDraw,
@@ -25,7 +26,9 @@ import {
   CLOCK_SECONDS,
   PREVIEW_INTERVAL_MS,
   STORAGE,
+  URGENT_SECONDS,
   type ConnectionState,
+  type IntroStage,
   type LeaderboardScope,
   type LockerCategory,
   type Mode,
@@ -34,7 +37,15 @@ import {
 } from "./constants";
 import { SpacetimeNet, defaultServerUrl, normalizeServerUrl, type NetFriend, type NetProfile } from "./net";
 import { storage } from "./storage";
-import type { BoardFrame, ConnectionView, GameView, RankedPlayer, SeatView } from "./types";
+import type {
+  ActionsView,
+  BoardFrame,
+  ConnectionView,
+  DirectiveView,
+  GameView,
+  RankedPlayer,
+  SeatView,
+} from "./types";
 
 type Listener = () => void;
 type Timer = ReturnType<typeof setTimeout>;
@@ -80,6 +91,13 @@ export class GameController {
   private drawn: Cell[] = [];
   private selectedNeutral: -1 | 0 | 1 = -1;
   private destination?: Cell;
+  /**
+   * One legal L, drawn on the board as an outline after the player asks to be shown a move.
+   *
+   * It is a display aid only - nothing about it is committed, and it is dropped the moment the
+   * player draws anything themselves, so it can never be mistaken for their own trace.
+   */
+  private hint: Cell[] = [];
 
   private clocks: [number, number] = [CLOCK_SECONDS, CLOCK_SECONDS];
   private clockBase = nowMs();
@@ -146,6 +164,16 @@ export class GameController {
   private rulesSlide = 0;
   private serverUrl = defaultServerUrl();
   private onlineCount = 0;
+  /** Undefined once the welcome screen or the tutorial has been finished or skipped. */
+  private intro?: IntroStage;
+  /**
+   * The account's rating when the current ranked match started.
+   *
+   * The server has always recalculated ratings at the end of a ranked match, but the result screen
+   * never said so. Keeping the before value is the whole trick: the delta is shown only once the
+   * new rating has actually replicated, so a slow update leaves the line out rather than lying.
+   */
+  private ratingBefore?: number;
 
   subscribe = (listener: Listener) => {
     this.listeners.add(listener);
@@ -158,14 +186,18 @@ export class GameController {
 
   async initialize() {
     if (this.initialized || this.disposed) return;
-    const [piece, board, server, token] = await Promise.all([
+    const [piece, board, server, token, introSeen] = await Promise.all([
       storage.get(STORAGE.pieceSkin, "0"),
       storage.get(STORAGE.boardSkin, "0"),
       storage.get(STORAGE.server, defaultServerUrl()),
       storage.get(STORAGE.token),
+      storage.get(STORAGE.intro),
     ]);
     this.pieceSkinIndex = PIECE_SKINS.indexOf(pieceSkin(Number(piece)));
     this.boardSkinIndex = BOARD_SKINS.indexOf(boardSkin(Number(board)));
+    // The L Game is not a game most people already know the rules to, so a first run opens on what
+    // it is rather than on a list of match types.
+    if (!introSeen) this.intro = "welcome";
     // A stored address that no longer parses must not brick online play forever, so an unusable
     // one is replaced with the default and rewritten.
     try {
@@ -224,7 +256,7 @@ export class GameController {
       }
       return true;
     } catch (error) {
-      this.notice = `Offline: ${reason(error, "could not reach the game server")}. CPU and Pass & Play still work.`;
+      this.notice = `Offline: ${reason(error, "could not reach the game server")}. the computer and pass and play still work.`;
       return false;
     } finally {
       this.connecting = false;
@@ -517,6 +549,7 @@ export class GameController {
     this.pendingL = undefined;
     this.ghost = undefined;
     this.drawn = [];
+    this.hint = [];
     this.selectedNeutral = -1;
     this.destination = undefined;
     this.cpuThinking = false;
@@ -598,7 +631,7 @@ export class GameController {
    */
   async joinOnline(ranked = false) {
     if (!(await this.requireNet())) {
-      this.notice = "The game server is unreachable. CPU and Pass & Play still work.";
+      this.notice = "The game server is unreachable. the computer and pass and play still work.";
       this.emit();
       return;
     }
@@ -612,6 +645,7 @@ export class GameController {
     this.onlineGeneration++;
     this.mode = "online";
     this.ranked = ranked;
+    this.ratingBefore = ranked ? this.account?.rating : undefined;
     this.onlineReady = false;
     this.gameId = undefined;
     this.resetMatch();
@@ -788,6 +822,9 @@ export class GameController {
    * meaning, so that press carried no information. `backToDraw` is what makes dropping it safe.
    */
   private extendDraw(cell: Cell) {
+    // The player is drawing for themselves now, so an outlined suggestion stops being help and
+    // starts being a second shape on the board.
+    this.hint = [];
     this.drawn = [...this.drawn, cell];
     if (this.drawn.length === 4 && this.beginDiscPhase()) return;
     this.message = "Continue through a highlighted square.";
@@ -796,18 +833,8 @@ export class GameController {
   clearDraw() {
     if (!this.canAct() || this.phase !== "l") return;
     this.drawn = [];
+    this.hint = [];
     this.message = "";
-    this.relayTurnInProgress();
-    this.emit();
-  }
-
-  submitL() {
-    if (!this.canAct() || this.phase !== "l") return;
-    if (!this.beginDiscPhase()) {
-      this.message = "Draw a complete legal L first.";
-      this.emit();
-      return;
-    }
     this.relayTurnInProgress();
     this.emit();
   }
@@ -818,6 +845,7 @@ export class GameController {
     this.ghost = this.state.pieces[this.state.turn].map((cell) => [...cell] as Cell);
     this.pendingL = placement.map((cell) => [...cell] as Cell);
     this.drawn = [];
+    this.hint = [];
     this.phase = "neutral";
     this.selectedNeutral = -1;
     this.destination = undefined;
@@ -831,6 +859,7 @@ export class GameController {
     this.pendingL = undefined;
     this.ghost = undefined;
     this.drawn = [];
+    this.hint = [];
     this.selectedNeutral = -1;
     this.destination = undefined;
     this.phase = "l";
@@ -873,14 +902,6 @@ export class GameController {
   /** Commits the turn: with the disc move when one was made, without it otherwise. */
   endTurn() {
     if (this.selectedNeutral >= 0 && this.destination) return this.commitTurn(this.selectedNeutral, this.destination);
-    this.commitTurn(-1);
-  }
-
-  confirmDisc() {
-    this.commitTurn(this.selectedNeutral, this.destination);
-  }
-
-  skipDisc() {
     this.commitTurn(-1);
   }
 
@@ -1076,6 +1097,80 @@ export class GameController {
   closeRules() { this.rulesOpen = false; this.emit(); }
   setRulesSlide(slide: number) { this.rulesSlide = Math.max(0, Math.min(4, slide)); this.emit(); }
 
+  /** Moves the first run on to the playable tutorial. */
+  startTutorial() {
+    this.intro = "tutorial";
+    this.emit();
+  }
+
+  /**
+   * Leaves the first run for good, from either the welcome screen or the tutorial.
+   *
+   * The flag is written before the emit so a reload during the animation cannot bring the intro
+   * back, and a storage failure only costs the player one extra welcome screen.
+   */
+  finishIntro() {
+    this.intro = undefined;
+    void storage.set(STORAGE.intro, "1");
+    this.emit();
+  }
+
+  /** Re-runs the tutorial from the Play screen, long after the first run. */
+  replayTutorial() {
+    this.intro = "tutorial";
+    this.emit();
+  }
+
+  /**
+   * Outlines one legal L on the board.
+   *
+   * Knowing that a move exists is the hard part of a first game - the board is small enough that
+   * "there is nothing I can do" and "I cannot see it" feel identical - so this answers that
+   * question without making the move.
+   */
+  showHint() {
+    if (!this.canAct() || this.phase !== "l") return;
+    const options = legalLPlacements(this.state, this.state.turn);
+    if (!options.length) return;
+    const paths = pathsForPlacement(options[Math.floor(Math.random() * options.length)]);
+    this.hint = paths[0] ?? [];
+    this.emit();
+  }
+
+  /**
+   * Takes back the last thing the player did, whatever that was.
+   *
+   * The turn is built in two halves and each used to have its own control, so taking back one
+   * square meant finding a different button than taking back a disc. One step back is one step
+   * back: the last square while drawing, the disc while placing it, and the whole L once the disc
+   * is home again.
+   */
+  undoStep() {
+    if (!this.canAct()) return;
+    if (this.phase === "l") {
+      if (!this.drawn.length) return;
+      this.drawn = this.drawn.slice(0, -1);
+      this.hint = [];
+      this.message = "";
+      this.relayTurnInProgress();
+      this.emit();
+      return;
+    }
+    if (this.phase !== "neutral") return;
+    if (this.selectedNeutral >= 0 || this.destination) {
+      this.returnDisc();
+      return;
+    }
+    this.backToDraw();
+  }
+
+  /** Whether `undoStep` would do anything, which is what greys the control out. */
+  private canUndo() {
+    if (!this.canAct()) return false;
+    if (this.phase === "l") return this.drawn.length > 0;
+    return this.phase === "neutral";
+  }
+
   private sideName(player: Player) { return PIECE_SKINS[this.pieceSkinIndex].sides[player]; }
 
   private playerLabel(player: Player) {
@@ -1102,23 +1197,163 @@ export class GameController {
       seconds: Math.ceil(this.remaining(player)),
       active: this.state.winner < 0 && this.state.turn === player,
       connected: this.mode !== "online" || this.seatConnected[player],
+      urgent: this.state.winner < 0 && this.state.turn === player
+        && Math.ceil(this.remaining(player)) <= URGENT_SECONDS,
     };
   }
 
   private statusText() {
-    if (this.message && this.canAct()) return this.message;
-    if (this.state.winner >= 0) return `${this.playerLabel(this.state.winner as Player)} wins.`;
-    if (this.cpuThinking) return this.cpuPreview.length ? "CPU is drawing its move…" : "CPU is considering the board…";
-    if (this.mode === "online" && !this.onlineReady) return this.message || "Waiting for a second player…";
-    if (!this.canAct()) {
-      const opponent = this.playerLabel(this.state.turn);
-      if (this.remote?.destination) return `${opponent} has a disc ready…`;
-      if (this.remote?.l) return `${opponent} is placing a disc…`;
-      if (this.remote?.drawn.length) return `${opponent} is drawing an L…`;
-      return `Waiting for ${opponent}.`;
+    const directive = this.directiveView();
+    return `${directive.title}. ${directive.body}`;
+  }
+
+  /** The name the directive uses for whoever is on the move, in the second person when it is you. */
+  private moverName() {
+    if (this.mode === "local") return this.sideName(this.state.turn);
+    return this.canAct() ? "You" : this.playerLabel(this.state.turn);
+  }
+
+  /**
+   * Everything the player needs to read off one panel: whose move it is, which half of the turn
+   * they are in, the single instruction, and how far through it they are.
+   *
+   * This used to be one sentence squeezed into a 22px line, which had to serve as the turn
+   * indicator, the instruction and the error channel at once. Splitting it into named parts is what
+   * lets the screen give each of those its own size and position.
+   */
+  private directiveView(): DirectiveView {
+    const opponent = this.playerLabel(this.state.turn);
+
+    if (this.state.winner >= 0) {
+      const winner = this.playerLabel(this.state.winner as Player);
+      return {
+        badge: "Match over", step: "", title: `${winner} wins`,
+        body: "The match is finished and the clocks have stopped.",
+        progress: "", filled: 0, showProgress: false, busy: false, tone: "waiting",
+      };
     }
-    const action = this.phase === "neutral" ? "drag a disc, or end your turn" : "drag through four highlighted squares";
-    return this.mode === "local" ? `${this.sideName(this.state.turn)}: ${action}.` : `${action[0].toUpperCase()}${action.slice(1)}.`;
+
+    if (this.mode === "online" && !this.onlineReady) {
+      return {
+        badge: this.ranked ? "Ranked" : "Casual", step: "Getting ready",
+        title: this.connectionState === "queueing" ? "Finding an opponent" : "Waiting for a second player",
+        body: this.notice || "You can leave the queue at any point without a penalty.",
+        progress: "", filled: 0, showProgress: false, busy: true, tone: "waiting",
+      };
+    }
+
+    if (this.cpuThinking) {
+      return {
+        badge: "Computer", step: "Their turn", title: "The computer is deciding",
+        body: this.cpuPreview.length
+          ? "Its L is appearing square by square as it settles on a move."
+          : "It is weighing up the board. This only takes a moment.",
+        progress: "", filled: 0, showProgress: false, busy: true, tone: "them",
+      };
+    }
+
+    if (!this.canAct()) {
+      const reconnecting = this.mode === "online" && this.connectionState !== "connected";
+      if (reconnecting) {
+        return {
+          badge: this.connectionState === "disconnected" ? "Offline" : "Reconnecting",
+          step: "Not your fault",
+          title: this.connectionState === "disconnected" ? "Lost the connection" : "Reconnecting",
+          body: "Your move is safe on the server. Nothing is lost while this sorts itself out.",
+          progress: "", filled: 0, showProgress: false, busy: true, tone: "alert",
+        };
+      }
+      const doing = this.remote?.destination ? `${opponent} has a disc ready to place`
+        : this.remote?.l ? `${opponent} placed their L and may still move a disc`
+          : this.remote?.drawn.length ? `${opponent} is tracing a new L`
+            : `${opponent} is choosing`;
+      return {
+        badge: `${opponent}'s turn`, step: "Their turn", title: doing,
+        body: "Nothing for you to do. A good moment to pick the squares you want next.",
+        progress: "", filled: 0, showProgress: false, busy: true, tone: "them",
+      };
+    }
+
+    const badge = this.mode === "local" ? `${this.moverName()} to move` : "Your turn";
+    const you = this.mode === "local" ? this.moverName() : "You";
+
+    if (this.phase === "l") {
+      const left = 4 - this.drawn.length;
+      return {
+        badge,
+        step: "Step 1 of 2",
+        title: this.drawn.length === 0 ? "Trace your new L"
+          : left === 1 ? "One square to go" : `${left} squares to go`,
+        body: this.drawn.length === 0
+          ? "Tap or drag through the four glowing squares. Those are the only legal places the L can reach."
+          : "Keep following the glow. Tap a numbered square to step the trace back to it.",
+        progress: `${this.drawn.length} of 4 squares`,
+        filled: this.drawn.length,
+        showProgress: true,
+        busy: false,
+        tone: "you",
+      };
+    }
+
+    const held = this.selectedNeutral >= 0;
+    return {
+      badge,
+      step: "Step 2 of 2 · optional",
+      title: this.destination ? "Disc placed" : held ? "Choose its new square" : "Move a disc, or end here",
+      body: this.destination
+        ? "End the turn to commit the L and the disc together, or take the disc back."
+        : held
+          ? "Tap any glowing empty square. Tap the disc again to set it back down."
+          : `${you} may slide one white disc to an empty square. Ending the turn now is a legal move.`,
+      progress: "L placed",
+      filled: 4,
+      showProgress: true,
+      busy: false,
+      tone: "you",
+    };
+  }
+
+  /**
+   * The three action slots, always all three.
+   *
+   * A control the player has learned only ever greys out; the label on the primary says why it is
+   * unavailable rather than leaving them to work it out.
+   */
+  private actionsView(): ActionsView {
+    const acting = this.canAct();
+    const drawing = acting && this.phase === "l";
+    const placing = acting && this.phase === "neutral";
+    return {
+      canUndo: this.canUndo(),
+      undoLabel: drawing ? "Undo the last square" : "Take back the disc",
+      secondaryLabel: placing ? "Redraw L" : "Clear",
+      canSecondary: placing || (drawing && this.drawn.length > 0),
+      primaryLabel: !acting ? (this.state.winner >= 0 ? "Match over" : "Their turn")
+        : placing ? "End turn" : "Place your L first",
+      canPrimary: placing,
+      canHint: drawing && this.drawn.length === 0,
+    };
+  }
+
+  /**
+   * How the match ended, written about whoever lost it.
+   *
+   * `playerLabel` says "You" for the local player, so the possessive has to follow it - "You had to
+   * move their L" is what happens when one sentence is used for both people.
+   */
+  private endingSentence(loser: Player) {
+    const name = this.playerLabel(loser);
+    const second = name === "You";
+    if (this.endReason === "time") return `${name} ran out of time.`;
+    if (this.endReason === "forfeit") return second ? "You left the match." : `${name} left the match.`;
+    return `${name} had to move ${second ? "your" : "their"} L and there was no legal square left for it.`;
+  }
+
+  /** The win condition, kept on screen so it never has to be remembered or looked up. */
+  private objectiveText() {
+    if (this.mode === "local") return "Leave the other L with nowhere legal to go.";
+    const opponent = this.mode === "cpu" ? "the computer" : this.playerLabel((1 - this.localPlayer) as Player);
+    return `Leave ${opponent} with nowhere legal to put their L.`;
   }
 
   private boardFrame(): BoardFrame {
@@ -1149,9 +1384,13 @@ export class GameController {
       ghost: showGhost && ghostCells.length ? { cells: ghostCells, player: mover, lifted } : undefined,
       drawn,
       targets: this.targets(),
+      hint: this.state.winner >= 0 || watching ? [] : this.hint,
+      // A finished match rings the piece that ran out of moves, which is the whole explanation.
+      outlined: this.state.winner >= 0 ? this.state.pieces[mover] : [],
       selectedNeutral: selected,
       pendingDestination: destination,
       discsMovable: this.phase === "neutral" && this.canAct(),
+      mover,
       watching,
       pieceSkin: this.pieceSkinIndex,
       boardSkin: this.boardSkinIndex,
@@ -1186,12 +1425,25 @@ export class GameController {
     const winner = this.state.winner >= 0 ? this.state.winner as Player : undefined;
     const loser = winner === undefined ? undefined : (1 - winner) as Player;
     const turns = Math.max(0, this.state.turnNumber - 1);
+    const youWon = winner !== undefined
+      && (this.mode === "local" || winner === (this.mode === "cpu" ? 0 : this.localPlayer));
+    const ratingAfter = this.account?.rating;
     const result = winner === undefined ? undefined : {
       title: `${this.playerLabel(winner)} wins`,
       detail: `${this.endReason === "time" ? `${this.playerLabel(loser!)} ran out of time.`
         : this.endReason === "forfeit" ? `${this.playerLabel(loser!)} left the match.`
           : `${this.playerLabel(loser!)} has no legal L move.`} Match finished in ${turns} turn${turns === 1 ? "" : "s"}.`,
       action: this.ranked ? "Find next match" : "Play again",
+      won: youWon,
+      loser: this.playerLabel(loser!),
+      reason: this.endingSentence(loser!),
+      turns,
+      ranked: this.ranked,
+      // Only shown once the new rating has replicated; an unchanged value means it has not.
+      ratingBefore: this.ranked ? this.ratingBefore : undefined,
+      ratingAfter: this.ranked && this.ratingBefore !== undefined && ratingAfter !== this.ratingBefore
+        ? ratingAfter
+        : undefined,
     };
     return {
       initialized: this.initialized,
@@ -1202,6 +1454,10 @@ export class GameController {
       state: this.state,
       board: this.boardFrame(),
       seats: [this.seatView(left), this.seatView(right)],
+      directive: this.directiveView(),
+      actions: this.actionsView(),
+      objective: this.objectiveText(),
+      turnNumber: this.state.turnNumber,
       status: this.statusText(),
       message: this.notice,
       ranked: this.ranked,
@@ -1209,12 +1465,6 @@ export class GameController {
       connection: this.connectionView(),
       cpuThinking: this.cpuThinking,
       canAct: this.canAct(),
-      canSubmitL: this.canAct() && this.phase === "l" && this.drawn.length === 4,
-      canClear: this.canAct() && this.phase === "l" && this.drawn.length > 0,
-      canConfirmDisc: this.canAct() && this.phase === "neutral" && Boolean(this.destination),
-      canEndTurn: this.canAct() && this.phase === "neutral",
-      canUndoL: this.canAct() && this.phase === "neutral",
-      discHeld: this.phase === "neutral" && this.selectedNeutral >= 0,
       resultOpen: this.resultOpen,
       leaveConfirmOpen: this.leaveConfirmOpen,
       result,
@@ -1239,6 +1489,7 @@ export class GameController {
       lockerMessage: this.lockerMessage,
       rulesOpen: this.rulesOpen,
       rulesSlide: this.rulesSlide,
+      intro: this.intro,
       serverUrl: this.serverUrl,
       competitors: this.competitors,
       remote: this.remote,

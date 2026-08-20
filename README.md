@@ -97,7 +97,7 @@ and [submission](https://docs.expo.dev/submit/introduction/) documentation.
 
 ## Game and online behavior
 
-- Offline: vs CPU and Pass & Play run entirely in the shared client rule engine, and keep working
+- Offline: vs CPU and Pass and play run entirely in the shared client rule engine, and keep working
   when the server is unreachable.
 - A turn is one gesture: drag through four highlighted squares to place the L, then drag a neutral
   disc if you want to move one, and End turn commits both. Tapping squares one at a time does the

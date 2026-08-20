@@ -6,7 +6,7 @@
     "icon": "./public/icons/icon-512.png",
     "orientation": "portrait",
     "scheme": "the-l-game",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lgame.app"
@@ -15,7 +15,7 @@
       "package": "com.lgame.app",
       "adaptiveIcon": {
         "foregroundImage": "./public/icons/maskable-512.png",
-        "backgroundColor": "#F4F0E6"
+        "backgroundColor": "#0D1411"
       },
       "predictiveBackGestureEnabled": true
     },

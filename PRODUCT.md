@@ -27,7 +27,7 @@ results are trustworthy, and every connection or match state is visible.
 
 ## Positioning
 
-One compact client supports offline CPU and Pass & Play while the SpacetimeDB module owns online
+One compact client supports offline CPU and Pass and play while the SpacetimeDB module owns online
 legality, clocks,
 reconnection, ratings, friends, presence, and leaderboards. Clients can preview intent but cannot
 forge an online result or rank.
@@ -40,7 +40,7 @@ text sizing, reduced motion, and keyboard/pointer input on web are part of norma
 
 ## Capabilities and Constraints
 
-- Preserve CPU, Pass & Play, casual and ranked matchmaking, authoritative clocks, waiting,
+- Preserve CPU, Pass and play, casual and ranked matchmaking, authoritative clocks, waiting,
   queueing, reconnecting, disconnected, and game-over states.
 - Preserve device-held identity accounts, name editing, DiceBear avatar selection, friends, online
   count, personal rank, global/friends leaderboards, rules guide, legal pages, and credits.
@@ -53,9 +53,11 @@ text sizing, reduced motion, and keyboard/pointer input on web are part of norma
 
 ## Brand Commitments
 
-The product name is The L Game. Preserve the restrained sage, paper, red, and blue identity, direct
-instructional voice, clear side colors, and uncluttered board-first hierarchy while translating the
-controls into HeroUI and native platform conventions.
+The product name is The L Game. The interface is a dark room around a lit board: the warm sage and
+paper palette belongs to the play surface and the type, red and blue name the two sides, and one
+mint accent carries the single primary action on any screen. Preserve that relationship, the direct
+instructional voice, and the board-first hierarchy while translating the controls into HeroUI and
+native platform conventions. See DESIGN.md for the tokens.
 
 ## Evidence on Hand
 

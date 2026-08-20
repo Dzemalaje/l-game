@@ -1,23 +1,23 @@
 :root {
-  color-scheme: light;
-  --lgame-paper: #f4f0e6;
-  --lgame-ink: #252b29;
-  --lgame-sage: #879c88;
-  --lgame-sage-dark: #556b59;
-  --lgame-red: #c4473f;
-  --lgame-blue: #386c8f;
+  color-scheme: dark;
+  --lgame-stage: #0d1411;
+  --lgame-panel: #16211c;
+  --lgame-text: #f2efe4;
+  --lgame-mint: #7fd6a6;
+  --lgame-red: #cf5c4f;
+  --lgame-blue: #4778ad;
 }
 
 html,
 body,
 #root {
   min-height: 100%;
-  background: var(--lgame-paper);
+  background: var(--lgame-stage);
 }
 
 body {
   margin: 0;
-  color: var(--lgame-ink);
+  color: var(--lgame-text);
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
 }
