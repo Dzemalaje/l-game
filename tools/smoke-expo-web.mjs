@@ -328,6 +328,29 @@ try {
   if (!animated) throw new Error("Motion did not apply any inline style to the board shapes");
   await waitFor(() => hasText("End turn"), "disc phase after a completed L");
   if (!await clickText("End turn")) throw new Error("End turn was not clickable");
+
+  // Regression: the computer's shape used to blank out completely twice per turn - once while it
+  // was still choosing, and again between finishing its trace and committing the move - so the
+  // piece flickered off and back on. Its squares show either as placed pieces or as the numbered
+  // trace, and those two must never both be empty while it is on the move.
+  const opponentShape = () => cdp.eval(`(() => ({
+    placed: document.querySelectorAll('[data-lg="piece"][data-cell^="1-"]').length,
+    traced: document.querySelectorAll('[data-lg="drawn"]').length,
+    moving: document.body.innerText.includes("computer is deciding"),
+  }))()`);
+  let sawTurn = false;
+  const blanks = [];
+  for (const deadline = Date.now() + 6_000; Date.now() < deadline;) {
+    const shape = await opponentShape();
+    if (shape.moving) sawTurn = true;
+    else if (sawTurn) break;
+    if (shape.moving && shape.placed + shape.traced === 0) blanks.push(shape);
+    await wait(40);
+  }
+  if (blanks.length) {
+    throw new Error(`The computer's L vanished from the board on ${blanks.length} samples during its turn`);
+  }
+  if (!sawTurn) console.warn("Note: the computer's turn was never observed, so the flicker check did not run.");
   await waitForScreen(() => cdp.eval(`document.body.innerText.includes("Back to menu") || (document.body.innerText.includes("Trace your new L") && !document.body.innerText.includes("computer is deciding"))`), "completed CPU turn", 8_000);
   let cpuFinished = await cdp.eval(`document.body.innerText.includes("Back to menu")`);
   for (let turn = 1; turn < 30 && !cpuFinished; turn++) {

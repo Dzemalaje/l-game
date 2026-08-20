@@ -1360,15 +1360,23 @@ export class GameController {
     const watching = this.mode === "online" && !this.canAct() && this.state.winner < 0 && Boolean(this.remote);
     const remote = watching ? this.remote : undefined;
     const pendingL = remote ? remote.l : this.pendingL;
-    const drawn = remote ? remote.drawn : this.phase === "l" ? this.drawn : [];
+    // A trace in progress belongs to the `drawn` channel whoever is making it: the local player, a
+    // remote opponent, or the computer. The computer used to draw through `pieces` instead, and it
+    // cost two visible glitches - its shape blanked out between finishing the trace and committing
+    // the turn, and any traced square that overlapped its own old position was filtered away as
+    // part of the lifted piece rather than drawn.
+    const drawn = remote ? remote.drawn
+      : this.cpuThinking ? this.cpuPreview
+        : this.phase === "l" ? this.drawn : [];
     const selected = remote ? remote.neutral : this.selectedNeutral;
     const destination = remote ? remote.destination : this.destination;
     const preview = this.previewState(pendingL);
     const pieces: [Cell[], Cell[]] = [preview.pieces[0], preview.pieces[1]];
-    if (this.cpuThinking && this.cpuPreview.length) pieces[1] = this.cpuPreview;
-    else if (this.cpuThinking) pieces[1] = [];
     const mover = this.state.turn;
-    const showGhost = Boolean(this.ghost) || Boolean(pendingL) || (this.phase === "l" && (this.canAct() || this.cpuThinking));
+    // A piece is only in hand once its owner has actually started moving it. `this.ghost` is set
+    // the moment a trace begins, which covers the computer; thinking about a move is not the same
+    // as having picked the piece up, and treating it as such left the board empty while it thought.
+    const showGhost = Boolean(this.ghost) || Boolean(pendingL) || (this.phase === "l" && this.canAct());
     // Until the new L is placed the piece is effectively in the player's hand, so the board marks
     // where it came from instead of drawing it as though it were still sitting there. Once it is
     // placed, only the squares it has actually vacated stay marked - a square the new L reuses is
